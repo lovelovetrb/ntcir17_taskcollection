@@ -1,0 +1,30 @@
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ntcir17-taskcollection:dev
+    working_dir: /work
+    volumes:
+      - .:/work
+      - /work/.venv   # ホストの .venv を隠す (コンテナ側は /opt/venv)
+      - ${NTCIR_DATA_DIR:-${HOME}/dev/dataset/ntcir17}:/data/ntcir:ro
+      - ${HOME}/.cache/huggingface:/root/.cache/huggingface
+      - uv-cache:/root/.cache/uv
+    environment:
+      NTCIR_DATA_DIR: /data/ntcir
+      HF_HOME: /root/.cache/huggingface
+      NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    shm_size: "16gb"
+    stdin_open: true
+    tty: true
+
+volumes:
+  uv-cache:

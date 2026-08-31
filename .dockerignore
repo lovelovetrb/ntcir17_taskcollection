@@ -1,0 +1,41 @@
+# バージョン管理・ローカル環境
+.git/
+.gitignore
+.venv/
+
+# テストコレクション (実行時に読み取り専用でマウントする)
+data/
+testcollections/
+*.tgz
+*.TGZ
+
+# 生成物
+indexes/
+runs/
+models/
+cache/
+outputs/
+*.jsonl
+*.npy
+*.pkl
+*.res
+*.res.gz
+
+# Python / ツールのキャッシュ
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.pyrefly_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# エディタ / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store

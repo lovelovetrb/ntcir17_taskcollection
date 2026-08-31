@@ -1,0 +1,61 @@
+[project]
+name = "ntcir17-taskcollection"
+version = "0.1.0"
+description = "NTCIR-1/2 を用いた検索ベクトルの層・次元レベルの分析基盤"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fugashi>=1.5.2",
+    "numpy>=2.5.2",
+    "torch>=2.13.0",
+    "transformers>=5.16.1",
+    "unidic-lite>=1.0.8",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+extend-exclude = ["docs"]   # ADR 内の引用コードを整形させない
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "N",        # pep8-naming
+    "UP",       # pyupgrade
+    "B",        # flake8-bugbear
+    "SIM",      # flake8-simplify
+    "PTH",      # flake8-use-pathlib
+    "RUF",      # ruff 固有
+]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.pyrefly]
+project-includes = ["**/*.py"]
+project-excludes = ["docs/**", ".venv/**"]
+untyped-def-behavior = "check-and-infer-return-type"
+
+[tool.pyrefly.errors]
+unannotated-parameter = true
+unannotated-return = true
+unannotated-attribute = true
+implicit-any-parameter = true
+no-any-return = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers --strict-config"
+markers = [
+    "slow: 実データ全件を触るなど時間のかかるテスト (deselect: -m 'not slow')",
+    "needs_data: NTCIR テストコレクションの実体を必要とするテスト",
+]
+
+[dependency-groups]
+dev = [
+    "pyrefly>=1.2.0",
+    "pytest>=9.1.1",
+    "ruff>=0.16.5",
+]

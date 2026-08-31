@@ -1,0 +1,44 @@
+# NTCIR テストコレクション (利用許諾の対象。絶対にコミットしない)
+ntcir1/
+ntcir2/
+testcollections/
+data/
+*.tgz
+*.TGZ
+
+# 生成物
+indexes/
+runs/
+models/
+cache/
+outputs/
+*.jsonl
+*.npy
+*.pkl
+*.res
+*.res.gz
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# ツール
+.pytest_cache/
+.ruff_cache/
+.pyrefly_cache/
+.coverage
+htmlcov/
+
+# エディタ / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
