@@ -377,7 +377,7 @@ wheels = [
 [[package]]
 name = "ntcir17-taskcollection"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "fugashi" },
     { name = "numpy" },

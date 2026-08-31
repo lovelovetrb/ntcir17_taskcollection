@@ -19,20 +19,14 @@ fmt:         ## Ruff で整形
 fmt-check:   ## 整形されているか検査のみ (CI 用)
 	$(UV) run ruff format --check .
 
-# 検査対象が無いと Pyrefly は失敗する。コードを書き始めるまでの間は実行しない
 typecheck:   ## Pyrefly で型検査
-	@if find . -name '*.py' -not -path './.venv/*' -not -path './.git/*' | grep -q .; then \
-	    $(UV) run pyrefly check; \
-	else \
-	    echo "検査対象の Python ファイルがありません"; \
-	fi
+	$(UV) run pyrefly check
 
-# exit 5 はテスト未収集。テストを書き始めるまでの間は失敗扱いにしない
 test:        ## pytest 全件
-	$(UV) run pytest || [ $$? -eq 5 ]
+	$(UV) run pytest
 
 test-fast:   ## 実データを触らないテストのみ
-	$(UV) run pytest -m "not slow and not needs_data" || [ $$? -eq 5 ]
+	$(UV) run pytest -m "not slow and not needs_data"
 
 check: lint fmt-check typecheck test   ## CI と同じ一式
 
