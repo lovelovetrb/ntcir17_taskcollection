@@ -26,3 +26,4 @@
 | [0011](0011-follow-transfer1-protocol.md) | NTCIR-17 Transfer-1 のプロトコルに準拠する | Accepted |
 | [0012](0012-bm25-baseline.md) | BM25 は Transfer-1 の指定構成 (PyTerrier + SudachiPy) で再現 | Accepted |
 | [0013](0013-metrics.md) | nDCG / Precision / Recall を k = 1000, 10, 1 で報告 | Accepted |
+| [0014](0014-normalization.md) | 層ごとの L2 正規化を次元選択の後に適用し、有無を実験軸とする | Accepted |
