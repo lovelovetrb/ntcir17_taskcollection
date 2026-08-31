@@ -1,0 +1,53 @@
+name: Lint
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+# uv run が実行前に依存を同期し直すのを止める。同期はワークフローが明示的に行う
+env:
+  UV_NO_SYNC: "1"
+
+jobs:
+  ruff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: "0.11.2"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      # Ruff は import 解決を必要としないため開発ツールだけを入れる
+      - name: Install dev tools
+        run: uv sync --locked --only-group dev
+
+      - run: make lint
+      - run: make fmt-check
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: "0.11.2"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      # Pyrefly は依存の型情報を参照するため全体を入れる
+      - name: Install dependencies
+        run: uv sync --locked --all-groups
+
+      - run: make typecheck
