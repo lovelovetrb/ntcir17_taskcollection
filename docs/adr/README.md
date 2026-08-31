@@ -27,3 +27,5 @@
 | [0012](0012-bm25-baseline.md) | BM25 は Transfer-1 の指定構成 (PyTerrier + SudachiPy) で再現 | Accepted |
 | [0013](0013-metrics.md) | nDCG / Precision / Recall を k = 1000, 10, 1 で報告 | Accepted |
 | [0014](0014-normalization.md) | 層ごとの L2 正規化を次元選択の後に適用し、有無を実験軸とする | Accepted |
+| [0015](0015-pooled-cache-only.md) | 全件のプーリング済みキャッシュのみを作る | Accepted |
+| [0016](0016-hidden-states-domain-model.md) | 隠れ状態を domain model とし、層と次元の選択を独立させる | Accepted |
