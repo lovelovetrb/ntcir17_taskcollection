@@ -29,3 +29,5 @@
 | [0014](0014-normalization.md) | 層ごとの L2 正規化を次元選択の後に適用し、有無を実験軸とする | Accepted |
 | [0015](0015-pooled-cache-only.md) | 全件のプーリング済みキャッシュのみを作る | Accepted |
 | [0016](0016-hidden-states-domain-model.md) | 隠れ状態を domain model とし、層と次元の選択を独立させる | Accepted |
+| [0017](0017-vector-construction-concatenation.md) | ベクトルの作り方は連結から始める | Accepted |
+| [0018](0018-tensor-on-gpu.md) | PyTorch テンソルで保持し、キャッシュ全体を GPU に載せる | Accepted |
