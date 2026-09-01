@@ -21,7 +21,7 @@ def vectors_of(
         item_ids=ids,
         layer_indices=layers,
         dimension_indices=dimensions,
-        zero_length_count=0,
+        zero_norm_count=0,
     )
 
 

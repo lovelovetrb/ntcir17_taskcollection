@@ -38,6 +38,7 @@ def rank_documents(queries: SearchVectors, documents: SearchVectors) -> Ranking:
     """クエリごとに全文書を内積の降順で並べる。
 
     同点は文書の並び順で決める。順序が実行ごとに揺れると実験を再現できないため。
+    すべての成分が 0 のベクトルは互いにスコア 0 で並ぶため、同点は実際に起こりうる。
     """
     if queries.layer_indices != documents.layer_indices:
         raise ValueError(
