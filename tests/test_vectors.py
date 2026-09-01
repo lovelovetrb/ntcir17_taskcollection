@@ -55,14 +55,15 @@ def test_layer_normalization_does_not_change_a_single_layer_result() -> None:
     torch.testing.assert_close(without.values, with_.values)
 
 
-def test_reports_how_many_vectors_had_no_length() -> None:
-    """静かに起きると性能が出ない原因に気づけないため、件数を残す。"""
+def test_reports_how_many_vectors_had_a_zero_norm() -> None:
+    """すべての成分が 0 のベクトルは正規化できない。静かに起きると性能が出ない
+    原因に気づけないため、件数を残す。"""
     values = torch.zeros(3, 2, 3)
     values[2] = 1.0
 
     built = build_search_vectors(states_of(values), normalize_layers=True)
 
-    assert built.zero_length_count == 2
+    assert built.zero_norm_count == 2
     assert torch.isfinite(built.values).all()
 
 

@@ -23,7 +23,8 @@ class SearchVectors:
     item_ids: tuple[str, ...]
     layer_indices: tuple[int, ...]
     dimension_indices: tuple[int, ...]
-    zero_length_count: int
+    zero_norm_count: int
+    """すべての成分が 0 で、向きを持たないベクトルの件数。"""
 
 
 def build_search_vectors(states: HiddenStates, *, normalize_layers: bool) -> SearchVectors:
@@ -32,8 +33,9 @@ def build_search_vectors(states: HiddenStates, *, normalize_layers: bool) -> Sea
     `normalize_layers` は層どうしのスケールを揃えるかどうか。残差接続により深い層
     ほどノルムが大きくなるため、揃えないと連結時に深い層が内積を支配する。
 
-    長さ 0 のベクトルは 0 のまま返る。実データでは滅多に起こらないが次元を極端に
-    絞ると起こりうるため、1 件のために実験を止めず、件数だけを残す。
+    すべての成分が 0 のベクトルは 0 のまま返る。正規化はノルムで割る操作であり、
+    ノルムが 0 だと割れないため。実データでは滅多に起こらないが次元を極端に絞ると
+    起こりうるので、1 件のために実験を止めず、件数だけを残す。
     """
     values = states.values.float()
     if normalize_layers:
@@ -45,5 +47,5 @@ def build_search_vectors(states: HiddenStates, *, normalize_layers: bool) -> Sea
         item_ids=states.item_ids,
         layer_indices=states.layer_indices,
         dimension_indices=states.dimension_indices,
-        zero_length_count=int((flattened.norm(dim=1) == 0).sum().item()),
+        zero_norm_count=int((flattened.norm(dim=1) == 0).sum().item()),
     )
