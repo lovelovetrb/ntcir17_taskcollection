@@ -7,7 +7,7 @@ nDCG / Precision / Recall を指定した k で計算する (ADR-0013)。適合�
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import torch
 from torch import Tensor
@@ -37,6 +37,14 @@ class Relevance:
     document_ids: tuple[str, ...]
     values: Tensor
     relevant_counts: Tensor
+
+    def to(self, device: str | torch.device) -> Relevance:
+        """テンソルを指定した置き場所へ移す。"""
+        return replace(
+            self,
+            values=self.values.to(device),
+            relevant_counts=self.relevant_counts.to(device),
+        )
 
 
 @dataclass(frozen=True)
@@ -90,7 +98,9 @@ def evaluate(ranking: Ranking, relevance: Relevance, ks: Sequence[int]) -> Evalu
 
     in_rank_order = relevance.values.gather(1, ranking.order)
     document_count = in_rank_order.shape[1]
-    discount = 1.0 / torch.log2(torch.arange(document_count, dtype=torch.float32) + 2.0)
+    device = in_rank_order.device
+    positions = torch.arange(document_count, dtype=torch.float32, device=device)
+    discount = 1.0 / torch.log2(positions + 2.0)
 
     scores: dict[str, Tensor] = {}
     for k in ks:
@@ -109,7 +119,8 @@ def evaluate(ranking: Ranking, relevance: Relevance, ks: Sequence[int]) -> Evalu
 def _ideal_gain(relevant_counts: Tensor, discount: Tensor, cutoff: int) -> Tensor:
     """適合文書を上位に並べたときの割引累積利得。"""
     reachable = torch.clamp(relevant_counts, max=cutoff)
-    cumulative = torch.cat([torch.zeros(1), discount[:cutoff].cumsum(dim=0)])
+    zero = torch.zeros(1, dtype=discount.dtype, device=discount.device)
+    cumulative = torch.cat([zero, discount[:cutoff].cumsum(dim=0)])
     return cumulative[reachable.long()]
 
 
