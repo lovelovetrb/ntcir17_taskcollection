@@ -16,7 +16,7 @@ from hidden_subspace.states import HiddenStates
 
 
 def test_mean_pool_ignores_padding() -> None:
-    """埋め草の位置を平均に混ぜると、短い文ほど値が薄まる。"""
+    """長さを揃えるために足したパディングの位置を平均に混ぜると、短い文ほど値が薄まる。"""
     hidden = torch.tensor([[[[1.0], [3.0], [99.0]]]])  # 1 層 x 1 文 x 3 トークン
     mask = torch.tensor([[1, 1, 0]])
 
