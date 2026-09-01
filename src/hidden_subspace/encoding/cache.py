@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, cast
 
@@ -38,3 +39,16 @@ def load_cache(path: Path) -> HiddenStates:
         layer_indices=tuple(stored["layer_indices"]),
         dimension_indices=tuple(stored["dimension_indices"]),
     )
+
+
+def encode_or_load(path: Path, build: Callable[[], HiddenStates]) -> HiddenStates:
+    """保存済みがあれば読み、なければ作って保存する。
+
+    全 332,918 件のエンコードには 20 分以上かかるため、実験を回すたびに作り直さない。
+
+    作った直後も保存したものを読み直して返す。そうしないと 1 度目だけ元の精度の
+    まま返り、2 度目以降と結果が食い違う。
+    """
+    if not path.is_file():
+        save_cache(build(), path)
+    return load_cache(path)
