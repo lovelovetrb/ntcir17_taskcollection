@@ -29,7 +29,8 @@ def test_selects_a_subset_without_duplicates() -> None:
 
 
 def test_result_is_sorted() -> None:
-    """同じ集合を選んだ構成どうしが同一に扱えるよう、順序を正規化する。"""
+    """内積は次元の順序に依存しないため検索結果は変わらないが、ベクトル上の位置から
+    (層, 次元) を辿る際に順序が予測できる。"""
     selected = SelectRandom(count=5, seed=0)(AVAILABLE)
 
     assert list(selected) == sorted(selected)
