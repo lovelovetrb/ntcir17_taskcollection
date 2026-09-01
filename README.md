@@ -119,7 +119,11 @@ lint ルール I001)。`ruff format --check` は import 順を見ないので、
 ## ディレクトリ
 
 ```
-docs/adr/    設計判断の記録 (ADR)
-sandbox/     探索用のスクリプト。本体には含めない
-tests/       テスト
+docs/adr/          設計判断の記録 (ADR)
+src/hidden_subspace/  本体
+sandbox/           データの下調べに使う単発のスクリプト
+tests/             テスト
 ```
+
+`sandbox/` のスクリプトは本体から参照されない。テストコレクションの中身を
+確かめたいときに手で実行するもので、`lint` と型検査の対象には含める。
