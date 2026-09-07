@@ -34,7 +34,11 @@ from hidden_subspace.states import HiddenStates
 CUTOFFS = (1, 10, 1000)
 DEFAULT_MODEL = "cl-tohoku/bert-base-japanese-v3"
 REPORTED = ("nDCG@10", "nDCG@1000", "Recall@1000")
-LABEL_WIDTH = 34
+PRIMARY = "nDCG@1000"
+LABEL_WIDTH = 44
+FULL_REPORT_LIMIT = 50
+"""これを超える構成数のときは、主指標の上位だけを表にする。"""
+TOP_REPORTED = 20
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -112,9 +116,20 @@ def padded(text: str, width: int) -> str:
 
 
 def report(results: Sequence[ConfigurationResult]) -> None:
+    """構成ごとの指標を表にする。
+
+    構成が多いときは主指標の上位だけを出す。8,000 を超える行を端末に流しても
+    読めない。記録はファイルが正であり、この表は目視の便宜である (ADR-0019)。
+    """
+    shown = results
+    print()
+    if len(results) > FULL_REPORT_LIMIT:
+        shown = sorted(results, key=lambda r: r.metrics[PRIMARY], reverse=True)[:TOP_REPORTED]
+        print(f"{len(results):,} 構成のうち {PRIMARY} の上位 {len(shown)} 件")
+
     header = padded("構成", LABEL_WIDTH) + " " + " ".join(f"{name:>12}" for name in REPORTED)
-    print(f"\n{header}")
-    for result in results:
+    print(header)
+    for result in shown:
         scores = " ".join(f"{result.metrics[name]:>12.4f}" for name in REPORTED)
         print(f"{padded(configuration_label(result.configuration), LABEL_WIDTH)} {scores}")
 
