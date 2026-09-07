@@ -50,17 +50,27 @@ class Configuration:
 
 @dataclass(frozen=True)
 class ConfigurationResult:
-    """構成 1 つに対する、全トピックを平均した結果。"""
+    """構成 1 つに対する、全トピックを平均した結果。
+
+    向きを持たないベクトルの件数を併せて持つ。0 ベクトルどうしはスコアが等しく
+    並び順で上位が決まるため、指標だけでは結果を読めない。次元を絞るほど増える。
+    """
 
     experiment: str
     configuration: Configuration
     metrics: Mapping[str, float]
+    zero_norm_queries: int
+    zero_norm_documents: int
 
     def as_record(self) -> dict[str, Any]:
         return {
             "experiment": self.experiment,
             **self.configuration.as_record(),
             "metrics": dict(self.metrics),
+            "zero_norm": {
+                "queries": self.zero_norm_queries,
+                "documents": self.zero_norm_documents,
+            },
         }
 
 

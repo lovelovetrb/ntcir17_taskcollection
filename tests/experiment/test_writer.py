@@ -25,7 +25,7 @@ METRICS = {"nDCG@10": 0.19}
 
 def results_of() -> ExperimentResults:
     return ExperimentResults(
-        configurations=[ConfigurationResult("layer-sweep", CONFIGURATION, METRICS)],
+        configurations=[ConfigurationResult("layer-sweep", CONFIGURATION, METRICS, 0, 0)],
         topics=[
             TopicResult("layer-sweep", CONFIGURATION, "0001", METRICS),
             TopicResult("layer-sweep", CONFIGURATION, "0002", METRICS),

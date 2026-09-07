@@ -31,6 +31,8 @@ def test_a_configuration_result_is_self_contained() -> None:
         experiment="layer-sweep",
         configuration=configuration_of(DimensionChoice(kind="all")),
         metrics=METRICS,
+        zero_norm_queries=0,
+        zero_norm_documents=2,
     )
 
     assert result.as_record() == {
@@ -40,6 +42,7 @@ def test_a_configuration_result_is_self_contained() -> None:
         "dimensions": {"kind": "all"},
         "normalize_layers": True,
         "metrics": METRICS,
+        "zero_norm": {"queries": 0, "documents": 2},
     }
 
 

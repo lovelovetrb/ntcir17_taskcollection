@@ -38,6 +38,15 @@ class ExperimentResults:
     topics: list[TopicResult]
 
 
+@dataclass(frozen=True)
+class PlanOutcome:
+    """構成 1 つを回して分かったこと。"""
+
+    evaluation: Evaluation
+    zero_norm_queries: int
+    zero_norm_documents: int
+
+
 def run_experiment(
     *,
     experiment: str,
@@ -59,13 +68,16 @@ def run_experiment(
             dimensions=describe_dimensions(plan.dimensions),
             normalize_layers=plan.normalize_layers,
         )
-        evaluation = _evaluate_plan(plan, documents, queries, relevance, ks)
+        outcome = _evaluate_plan(plan, documents, queries, relevance, ks)
+        evaluation = outcome.evaluation
 
         configurations.append(
             ConfigurationResult(
                 experiment=experiment,
                 configuration=configuration,
                 metrics=evaluation.macro_average(),
+                zero_norm_queries=outcome.zero_norm_queries,
+                zero_norm_documents=outcome.zero_norm_documents,
             )
         )
         for row, topic_id in enumerate(evaluation.topic_ids):
@@ -90,14 +102,19 @@ def _evaluate_plan(
     queries: HiddenStates,
     relevance: Relevance,
     ks: Sequence[int],
-) -> Evaluation:
-    narrowed_documents = _narrow(documents, plan)
-    narrowed_queries = _narrow(queries, plan)
-    ranking = rank_documents(
-        build_search_vectors(narrowed_queries, normalize_layers=plan.normalize_layers),
-        build_search_vectors(narrowed_documents, normalize_layers=plan.normalize_layers),
+) -> PlanOutcome:
+    query_vectors = build_search_vectors(
+        _narrow(queries, plan), normalize_layers=plan.normalize_layers
     )
-    return evaluate(ranking, relevance, ks)
+    document_vectors = build_search_vectors(
+        _narrow(documents, plan), normalize_layers=plan.normalize_layers
+    )
+    ranking = rank_documents(query_vectors, document_vectors)
+    return PlanOutcome(
+        evaluation=evaluate(ranking, relevance, ks),
+        zero_norm_queries=query_vectors.zero_norm_count,
+        zero_norm_documents=document_vectors.zero_norm_count,
+    )
 
 
 def _narrow(states: HiddenStates, plan: ConfigurationPlan) -> HiddenStates:
