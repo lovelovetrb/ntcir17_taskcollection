@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 import torch
 
-from hidden_subspace.encoding.cache import load_cache, save_cache
+from hidden_subspace.encoding.cache import encode_or_load, load_cache, save_cache
 from hidden_subspace.encoding.pooling import mean_pool
 from hidden_subspace.states import HiddenStates
 
@@ -62,3 +62,18 @@ def test_cache_is_stored_as_half_precision(tmp_path: Path) -> None:
 def test_loading_a_missing_cache_is_rejected(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError):
         load_cache(tmp_path / "absent.pt")
+
+
+def test_encode_or_load_builds_the_cache_when_absent(tmp_path: Path) -> None:
+    calls: list[int] = []
+
+    def build() -> HiddenStates:
+        calls.append(1)
+        return HiddenStates.of(torch.randn(2, 3, 4), item_ids=("a", "b"))
+
+    path = tmp_path / "c.pt"
+    first = encode_or_load(path, build)
+    second = encode_or_load(path, build)
+
+    assert calls == [1], "2 度目は保存済みのものを読む"
+    assert torch.equal(first.values, second.values)

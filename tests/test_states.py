@@ -85,3 +85,13 @@ def test_item_ids_must_match_the_number_of_rows() -> None:
     values = torch.zeros(3, 5, 4)
     with pytest.raises(ValueError):
         HiddenStates.of(values, item_ids=("a", "b"))
+
+
+def test_moving_to_a_device_keeps_the_identifiers(states: HiddenStates) -> None:
+    """置き場所を変えても、何であるかは変わらない。"""
+    moved = states.to("cpu")
+
+    assert moved.item_ids == states.item_ids
+    assert moved.layer_indices == states.layer_indices
+    assert moved.dimension_indices == states.dimension_indices
+    assert torch.equal(moved.values, states.values)

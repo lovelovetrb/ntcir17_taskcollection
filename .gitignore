@@ -7,8 +7,8 @@ data/
 *.TGZ
 
 # 生成物
+results/
 indexes/
-runs/
 models/
 cache/
 outputs/

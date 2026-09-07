@@ -125,3 +125,13 @@ def test_rejects_a_ranking_built_for_other_documents() -> None:
 
     with pytest.raises(ValueError):
         evaluate(ranking, relevance, ks=(1,))
+
+
+def test_relevance_can_be_moved_to_a_device() -> None:
+    relevance = align_relevance({"t1": {"b": 1}}, TOPICS, DOCUMENTS)
+
+    moved = relevance.to("cpu")
+
+    assert moved.topic_ids == relevance.topic_ids
+    assert torch.equal(moved.values, relevance.values)
+    assert torch.equal(moved.relevant_counts, relevance.relevant_counts)

@@ -69,9 +69,13 @@ class HiddenStates:
     def dimension_count(self) -> int:
         return self.values.shape[2]
 
+    def to(self, device: str | torch.device) -> HiddenStates:
+        """テンソルを指定した置き場所へ移す。何であるかは変わらない。"""
+        return replace(self, values=self.values.to(device))
+
     def select_layers(self, layers: Sequence[int]) -> HiddenStates:
         """指定した層だけを残す。次元は変わらない。"""
-        positions = _positions_of(layers, self.layer_indices, axis_name="層")
+        positions = _positions_of(layers, self.layer_indices, "層", self.values.device)
         return replace(
             self,
             values=self.values.index_select(1, positions),
@@ -80,7 +84,7 @@ class HiddenStates:
 
     def select_dimensions(self, dimensions: Sequence[int]) -> HiddenStates:
         """指定した次元だけを残す。層は変わらない。"""
-        positions = _positions_of(dimensions, self.dimension_indices, axis_name="次元")
+        positions = _positions_of(dimensions, self.dimension_indices, "次元", self.values.device)
         return replace(
             self,
             values=self.values.index_select(2, positions),
@@ -88,10 +92,18 @@ class HiddenStates:
         )
 
 
-def _positions_of(wanted: Sequence[int], available: tuple[int, ...], *, axis_name: str) -> Tensor:
-    """元の番号の列を、いま保持しているテンソル上の位置に変換する。"""
+def _positions_of(
+    wanted: Sequence[int],
+    available: tuple[int, ...],
+    axis_name: str,
+    device: torch.device,
+) -> Tensor:
+    """元の番号の列を、いま保持しているテンソル上の位置に変換する。
+
+    添字は値と同じ置き場所に作る。揃っていないと `index_select` が拒否する。
+    """
     position_of = {number: position for position, number in enumerate(available)}
     unknown = [number for number in wanted if number not in position_of]
     if unknown:
         raise ValueError(f"保持していない{axis_name}が指定された: {unknown}")
-    return torch.tensor([position_of[number] for number in wanted], dtype=torch.long)
+    return torch.tensor([position_of[number] for number in wanted], dtype=torch.long, device=device)
