@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import os
 import time
+import unicodedata
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -25,7 +26,7 @@ from hidden_subspace.encoding.cache import encode_or_load
 from hidden_subspace.encoding.encoder import Encoder
 from hidden_subspace.evaluation import Relevance, align_relevance
 from hidden_subspace.experiment.plans import build_plans, plan_names
-from hidden_subspace.experiment.results import ConfigurationResult
+from hidden_subspace.experiment.results import Configuration, ConfigurationResult
 from hidden_subspace.experiment.runner import run_experiment
 from hidden_subspace.experiment.writer import write_results
 from hidden_subspace.states import HiddenStates
@@ -33,6 +34,7 @@ from hidden_subspace.states import HiddenStates
 CUTOFFS = (1, 10, 1000)
 DEFAULT_MODEL = "cl-tohoku/bert-base-japanese-v3"
 REPORTED = ("nDCG@10", "nDCG@1000", "Recall@1000")
+LABEL_WIDTH = 34
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -87,13 +89,42 @@ def prepare(
     return documents, queries, relevance
 
 
+def configuration_label(configuration: Configuration) -> str:
+    """構成を 1 行のラベルにする。
+
+    層と次元の両方を書く。層だけを書くと、層を固定して次元を変える実験で
+    すべての行が同じラベルになる。
+    """
+    layers = "-".join(str(layer) for layer in configuration.layers)
+    choice = configuration.dimensions
+    parameters = "".join(f" {name}={value}" for name, value in choice.parameters.items())
+    return f"層 {layers} / 次元 {choice.kind}{parameters}"
+
+
+def padded(text: str, width: int) -> str:
+    """右に空白を詰める。全角は 2 桁と数える。
+
+    書式指定の桁数は文字数で数えるため、全角を含むラベルはそのままでは桁が
+    ずれる。
+    """
+    columns = sum(2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in text)
+    return text + " " * max(width - columns, 0)
+
+
 def report(results: Sequence[ConfigurationResult]) -> None:
-    header = f"{'層':>12} " + " ".join(f"{name:>12}" for name in REPORTED)
+    header = padded("構成", LABEL_WIDTH) + " " + " ".join(f"{name:>12}" for name in REPORTED)
     print(f"\n{header}")
     for result in results:
-        layers = "-".join(str(layer) for layer in result.configuration.layers)
         scores = " ".join(f"{result.metrics[name]:>12.4f}" for name in REPORTED)
-        print(f"{layers:>12} {scores}")
+        print(f"{padded(configuration_label(result.configuration), LABEL_WIDTH)} {scores}")
+
+    for result in results:
+        if result.zero_norm_queries or result.zero_norm_documents:
+            print(
+                f"向きを持たないベクトル: クエリ {result.zero_norm_queries} 件 / "
+                f"文書 {result.zero_norm_documents} 件 "
+                f"({configuration_label(result.configuration)})"
+            )
 
 
 def main() -> int:
