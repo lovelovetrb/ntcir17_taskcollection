@@ -12,6 +12,9 @@ export NTCIR_DATA_DIR
 # nohup で回すときの出力先。リダイレクト先は起動前に存在している必要がある。
 mkdir -p "$REPOSITORY_ROOT/logs"
 
+# 出力をファイルへ流すと数 KB 溜まるまで書き出されず、進捗が見えなくなる。
+export PYTHONUNBUFFERED=1
+
 # 使う GPU。共用機のため既定で 1 枚に絞る。
 # 例: CUDA_VISIBLE_DEVICES=2,3 ./runs/layer_sweep.sh
 : "${CUDA_VISIBLE_DEVICES:=0}"
