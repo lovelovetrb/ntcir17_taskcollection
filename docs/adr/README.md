@@ -31,3 +31,4 @@
 | [0016](0016-hidden-states-domain-model.md) | 隠れ状態を domain model とし、層と次元の選択を独立させる | Accepted |
 | [0017](0017-vector-construction-concatenation.md) | ベクトルの作り方は連結から始める | Accepted |
 | [0018](0018-tensor-on-gpu.md) | PyTorch テンソルで保持し、キャッシュ全体を GPU に載せる | Accepted |
+| [0019](0019-layer-combinations.md) | 層の組み合わせは 2 層以上の全通りを試す | Accepted |

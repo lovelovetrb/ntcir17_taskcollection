@@ -12,6 +12,7 @@ indexes/
 models/
 cache/
 outputs/
+logs/
 *.jsonl
 *.npy
 *.pkl
