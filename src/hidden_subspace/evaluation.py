@@ -20,6 +20,9 @@ Qrels = Mapping[str, Mapping[str, int]]
 RELEVANT_FROM = 1
 """この grade 以上を適合とする。"""
 
+CUTOFFS = (1, 10, 1000)
+"""実験で指標を計算する k (ADR-0013)。記録を照合するときも同じ k で計算し直す。"""
+
 
 @dataclass(frozen=True)
 class Relevance:
