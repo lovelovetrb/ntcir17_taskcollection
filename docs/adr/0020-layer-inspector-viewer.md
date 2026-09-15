@@ -83,6 +83,9 @@ NFKC 正規化がかかる         ＡＢＣ → ABC、① → 1、㈱ → (株)
 `sandbox` を加え、`make test`・`make test-fast`・`make check` の対象に含める。
 sandbox 側のディレクトリと、その中のテストのディレクトリには `__init__.py` を置く。
 
+型検査は pyrefly の `search-path` に `sandbox` を加え、`layer_inspector` を import 名で
+解決する。
+
 ## 背景
 
 layer-sweep のトピック別 nDCG@1000 は、隣接する層どうしでは相関が 0.9 を超えるのに、
@@ -140,6 +143,10 @@ Dockerfile は `uv sync --all-groups` で同期するため、ローカルでも
 ことがない。`tests` には `__init__.py` がなく、テストファイルは名前だけで import される。
 sandbox 側をパッケージにしておけば、同じ名前のテストファイルがあってもパッケージ名つきで
 import され、衝突しない。
+
+pytest はテストのディレクトリから `sandbox` を import の探索先に加えるため、
+`layer_inspector` を import できる。一方 pyrefly は `sandbox` を探索先に持たず、
+`missing-import` になる。`search-path` を足さないと、テストは通るのに型検査だけが落ちる。
 
 ### 適合文書の上位と下位を重ならないように分ける
 
