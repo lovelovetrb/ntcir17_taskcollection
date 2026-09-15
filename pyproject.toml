@@ -43,6 +43,7 @@ docstring-code-format = true
 [tool.pyrefly]
 project-includes = ["**/*.py"]
 project-excludes = ["docs/**", ".venv/**"]
+search-path = ["sandbox"]
 untyped-def-behavior = "check-and-infer-return-type"
 
 [tool.pyrefly.errors]
@@ -53,7 +54,7 @@ implicit-any-parameter = true
 no-any-return = true
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "sandbox"]
 addopts = "-q --strict-markers --strict-config"
 markers = [
     "slow: 実データ全件を触るなど時間のかかるテスト (deselect: -m 'not slow')",
