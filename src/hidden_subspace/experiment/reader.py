@@ -25,8 +25,9 @@ def read_topic_results(root: Path, model_id: str, experiment: str) -> list[Topic
     directory = root / model_id / experiment / TOPIC_DIRECTORY
     if not directory.is_dir():
         raise FileNotFoundError(
-            f"{experiment} の記録がない: {directory}\n"
-            f"先に python run_experiment.py --experiment {experiment} --model {model_id}"
+            f"{experiment} の記録がありません: {directory}\n"
+            f"先に python run_experiment.py --experiment {experiment} --model {model_id} "
+            "を実行してください。"
         )
 
     results = [
@@ -35,5 +36,7 @@ def read_topic_results(root: Path, model_id: str, experiment: str) -> list[Topic
         for line in path.read_text(encoding="utf-8").splitlines()
     ]
     if not results:
-        raise ValueError(f"記録が空: {directory}")
+        raise ValueError(
+            f"記録が 1 件もありません: {directory}\n実験が最後まで実行されたかを確認してください。"
+        )
     return results
