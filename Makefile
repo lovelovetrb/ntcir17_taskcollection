@@ -1,4 +1,4 @@
-.PHONY: help sync lint fmt fmt-check typecheck test test-fast check docker-build docker-shell
+.PHONY: help sync lint fmt fmt-check typecheck test test-fast check layer-inspector docker-build docker-shell
 
 UV ?= uv
 
@@ -29,6 +29,9 @@ test-fast:   ## 実データを触らないテストのみ
 	$(UV) run pytest -m "not slow and not needs_data"
 
 check: lint fmt-check typecheck test   ## CI と同じ一式
+
+layer-inspector:  ## 層ごとの検索結果を読むビューアを起動 (初回は GPU で結果ファイルを作る)
+	PYTHONPATH=sandbox $(UV) run streamlit run sandbox/layer_inspector/app.py
 
 docker-build:  ## イメージをビルド
 	docker compose build
