@@ -12,10 +12,10 @@ from hidden_subspace.experiment.results import (
     ConfigurationResult,
     TopicResult,
 )
-from hidden_subspace.retrieval import rank_documents
+from hidden_subspace.retrieval import Ranking, rank_documents
 from hidden_subspace.selection import Selector
 from hidden_subspace.states import HiddenStates
-from hidden_subspace.vectors import build_search_vectors
+from hidden_subspace.vectors import SearchVectors, build_search_vectors
 
 
 @dataclass(frozen=True)
@@ -96,6 +96,17 @@ def run_experiment(
     return ExperimentResults(configurations=configurations, topics=topics)
 
 
+def rank_configuration(
+    plan: ConfigurationPlan, documents: HiddenStates, queries: HiddenStates
+) -> Ranking:
+    """構成 1 つについて、実験と同じ手順でクエリごとに全文書を並べる。
+
+    実験の外で順位を読むときもこれを使う。手順を書き写すと、層や次元の絞り方が
+    実験と食い違っても気づけない。
+    """
+    return rank_documents(_vectors(queries, plan), _vectors(documents, plan))
+
+
 def _evaluate_plan(
     plan: ConfigurationPlan,
     documents: HiddenStates,
@@ -103,18 +114,18 @@ def _evaluate_plan(
     relevance: Relevance,
     ks: Sequence[int],
 ) -> PlanOutcome:
-    query_vectors = build_search_vectors(
-        _narrow(queries, plan), normalize_layers=plan.normalize_layers
-    )
-    document_vectors = build_search_vectors(
-        _narrow(documents, plan), normalize_layers=plan.normalize_layers
-    )
+    query_vectors = _vectors(queries, plan)
+    document_vectors = _vectors(documents, plan)
     ranking = rank_documents(query_vectors, document_vectors)
     return PlanOutcome(
         evaluation=evaluate(ranking, relevance, ks),
         zero_norm_queries=query_vectors.zero_norm_count,
         zero_norm_documents=document_vectors.zero_norm_count,
     )
+
+
+def _vectors(states: HiddenStates, plan: ConfigurationPlan) -> SearchVectors:
+    return build_search_vectors(_narrow(states, plan), normalize_layers=plan.normalize_layers)
 
 
 def _narrow(states: HiddenStates, plan: ConfigurationPlan) -> HiddenStates:

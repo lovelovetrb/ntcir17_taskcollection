@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 import torch
 
-from hidden_subspace.evaluation import Relevance, align_relevance
-from hidden_subspace.experiment.runner import ConfigurationPlan, run_experiment
+from hidden_subspace.evaluation import Relevance, align_relevance, evaluate
+from hidden_subspace.experiment.runner import ConfigurationPlan, rank_configuration, run_experiment
 from hidden_subspace.selection import SelectAll, SelectRandom
 from hidden_subspace.states import HiddenStates
 
@@ -106,3 +106,39 @@ def test_records_the_dimension_choice(pieces: Pieces) -> None:
     assert record["layers"] == [0, 1]
     assert record["normalize_layers"] is True
     assert record["experiment"] == "random-dimensions"
+
+
+def test_ranks_with_the_hidden_states_of_the_planned_layers() -> None:
+    """層 0 と層 1 で文書の近さを逆にしておき、指定した層で順位が決まることを見る。"""
+    documents = HiddenStates.of(
+        torch.tensor([[[1.0, 0.0], [0.0, 1.0]], [[0.0, 1.0], [1.0, 0.0]]]), item_ids=("a", "b")
+    )
+    queries = HiddenStates.of(torch.tensor([[[1.0, 0.0], [1.0, 0.0]]]), item_ids=("0001",))
+
+    def top_document(layer: int) -> str:
+        plan = ConfigurationPlan(layers=(layer,), dimensions=SelectAll(), normalize_layers=False)
+        return rank_configuration(plan, documents, queries).ranked_ids_for("0001")[0]
+
+    assert top_document(0) == "a"
+    assert top_document(1) == "b"
+
+
+def test_recorded_metrics_are_computed_from_the_same_ranking(pieces: Pieces) -> None:
+    """実験の外で順位を求め直しても、記録された指標を出した順位と一致する。"""
+    documents, queries, relevance = pieces
+    plan = ConfigurationPlan(layers=(1,), dimensions=SelectAll(), normalize_layers=False)
+
+    results = run_experiment(
+        experiment="layer-sweep",
+        model_id="m",
+        documents=documents,
+        queries=queries,
+        relevance=relevance,
+        plans=[plan],
+        ks=(1, 2),
+    )
+
+    expected = evaluate(rank_configuration(plan, documents, queries), relevance, ks=(1, 2))
+    for topic in results.topics:
+        row = expected.topic_ids.index(topic.topic_id)
+        assert topic.metrics == {name: float(v[row].item()) for name, v in expected.scores.items()}
