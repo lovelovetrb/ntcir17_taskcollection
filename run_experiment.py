@@ -24,14 +24,13 @@ from hidden_subspace.collection import Collection, Ntcir1Paths, read_collection
 from hidden_subspace.corpus.text import document_text, query_text
 from hidden_subspace.encoding.cache import encode_or_load
 from hidden_subspace.encoding.encoder import Encoder
-from hidden_subspace.evaluation import Relevance, align_relevance
+from hidden_subspace.evaluation import CUTOFFS, Relevance, align_relevance
 from hidden_subspace.experiment.plans import build_plans, plan_names
 from hidden_subspace.experiment.results import Configuration, ConfigurationResult
 from hidden_subspace.experiment.runner import run_experiment
 from hidden_subspace.experiment.writer import write_results
 from hidden_subspace.states import HiddenStates
 
-CUTOFFS = (1, 10, 1000)
 DEFAULT_MODEL = "cl-tohoku/bert-base-japanese-v3"
 REPORTED = ("nDCG@10", "nDCG@1000", "Recall@1000")
 PRIMARY = "nDCG@1000"
