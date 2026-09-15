@@ -24,6 +24,12 @@ class DimensionChoice:
     def as_record(self) -> dict[str, Any]:
         return {"kind": self.kind, **dict(self.parameters)}
 
+    @classmethod
+    def from_record(cls, record: Mapping[str, Any]) -> DimensionChoice:
+        """`as_record` の逆。`kind` の横に並べた引数を `parameters` に戻す。"""
+        parameters = {name: value for name, value in record.items() if name != "kind"}
+        return cls(kind=record["kind"], parameters=parameters)
+
 
 @dataclass(frozen=True)
 class Configuration:
@@ -46,6 +52,16 @@ class Configuration:
             "dimensions": self.dimensions.as_record(),
             "normalize_layers": self.normalize_layers,
         }
+
+    @classmethod
+    def from_record(cls, record: Mapping[str, Any]) -> Configuration:
+        """`as_record` の逆。記録では list になっている層番号を tuple に戻す。"""
+        return cls(
+            model_id=record["model_id"],
+            layers=tuple(record["layers"]),
+            dimensions=DimensionChoice.from_record(record["dimensions"]),
+            normalize_layers=record["normalize_layers"],
+        )
 
 
 @dataclass(frozen=True)
@@ -90,3 +106,13 @@ class TopicResult:
             "topic_id": self.topic_id,
             "metrics": dict(self.metrics),
         }
+
+    @classmethod
+    def from_record(cls, record: Mapping[str, Any]) -> TopicResult:
+        """`as_record` の逆。構成の項目は同じ階層に並べて書くため、同じ記録から読む。"""
+        return cls(
+            experiment=record["experiment"],
+            configuration=Configuration.from_record(record),
+            topic_id=record["topic_id"],
+            metrics=dict(record["metrics"]),
+        )
