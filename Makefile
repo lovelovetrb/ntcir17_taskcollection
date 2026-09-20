@@ -31,7 +31,7 @@ test-fast:   ## 実データを触らないテストのみ
 check: lint fmt-check typecheck test   ## CI と同じ一式
 
 layer-inspector:  ## 層ごとの検索結果を読むビューアを起動 (初回は GPU で結果ファイルを作る)
-	PYTHONPATH=sandbox $(UV) run streamlit run sandbox/layer_inspector/app.py
+	PYTHONPATH=sandbox $(UV) run streamlit run sandbox/layer_inspector/app.py --server.port 5955
 
 docker-build:  ## イメージをビルド
 	docker compose build
