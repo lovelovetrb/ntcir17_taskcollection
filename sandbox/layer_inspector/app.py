@@ -167,10 +167,12 @@ def show_document(
     columns[3].markdown(f"**文書 ID**  \n`{document.document_id}`")
 
     st.markdown(f"**クエリ** (トピック {choice.topic_id})")
-    st.code(inspection.inputs.queries[choice.topic_id], language=None, wrap_lines=True)
+    st.code(
+        inspection.inputs.queries[choice.topic_id].replace(" ", ""), language=None, wrap_lines=True
+    )
     st.markdown("**文書**")
     st.code(
-        inspection.inputs.documents[document.document_id],
+        inspection.inputs.documents[document.document_id].replace(" ", ""),
         language=None,
         wrap_lines=True,
         height=DOCUMENT_HEIGHT,
