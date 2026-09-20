@@ -1,6 +1,6 @@
 # ADR-0020: 層ごとの検索結果を読むビューアを Streamlit で作る
 
-- Status: Accepted
+- Status: Superseded in part by ADR-0021
 - Date: 2026-09-14
 
 ## 決定

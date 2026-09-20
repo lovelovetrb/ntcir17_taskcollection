@@ -32,4 +32,5 @@
 | [0017](0017-vector-construction-concatenation.md) | ベクトルの作り方は連結から始める | Accepted |
 | [0018](0018-tensor-on-gpu.md) | PyTorch テンソルで保持し、キャッシュ全体を GPU に載せる | Accepted |
 | [0019](0019-layer-combinations.md) | 層の組み合わせは 2 層以上の全通りを試す | Accepted |
-| [0020](0020-layer-inspector-viewer.md) | 層ごとの検索結果を読むビューアを Streamlit で作る | Accepted |
+| [0020](0020-layer-inspector-viewer.md) | 層ごとの検索結果を読むビューアを Streamlit で作る | Superseded in part by 0021 |
+| [0021](0021-split-build-and-view.md) | ビューアを結果ファイルの作成と表示に分け、表示側を軽い環境で動かす | Accepted |
