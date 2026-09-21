@@ -1,0 +1,36 @@
+# 層ごとの検索結果を読むビューアの表示側だけを動かすイメージ (ADR-0021)。
+# 結果ファイルには NTCIR の文書本文が入るため、イメージには入れず実行時にマウントする。
+FROM python:3.13-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app/sandbox \
+    UV_LINK_MODE=copy \
+    UV_NO_CACHE=1 \
+    UV_PROJECT_ENVIRONMENT=/opt/venv \
+    UV_PYTHON=/usr/local/bin/python \
+    UV_PYTHON_DOWNLOADS=never \
+    LAYER_INSPECTOR_RESULT_FILE=/data/inspection.json \
+    PATH="/opt/venv/bin:$PATH"
+
+COPY --from=ghcr.io/astral-sh/uv:0.11.2 /uv /uvx /usr/local/bin/
+
+WORKDIR /app
+
+# 表示側は streamlit だけで動く。プロジェクト本体を入れると torch と transformers が付いてくる
+COPY pyproject.toml uv.lock .python-version ./
+RUN uv sync --locked --only-group viewer --no-install-project
+
+# 結果を作る側 (build.py・inspection.py など) は入れない。表示に使うものだけを置く
+COPY sandbox/layer_inspector/__init__.py \
+     sandbox/layer_inspector/app.py \
+     sandbox/layer_inspector/presentation.py \
+     sandbox/layer_inspector/view.py \
+     sandbox/layer_inspector/
+
+EXPOSE 5955
+
+CMD ["streamlit", "run", "sandbox/layer_inspector/app.py", \
+     "--server.port", "5955", \
+     "--server.address", "0.0.0.0", \
+     "--server.headless", "true"]

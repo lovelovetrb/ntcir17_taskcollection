@@ -1,4 +1,4 @@
-.PHONY: help sync lint fmt fmt-check typecheck test test-fast check layer-inspector-build layer-inspector docker-build docker-shell
+.PHONY: help sync lint fmt fmt-check typecheck test test-fast check layer-inspector-build layer-inspector viewer-build viewer-up docker-build docker-shell
 
 UV ?= uv
 
@@ -35,6 +35,12 @@ layer-inspector-build:  ## ビューアの結果ファイルを作る (GPU が�
 
 layer-inspector:  ## 層ごとの検索結果を読むビューアを起動 (結果ファイルが要る)
 	PYTHONPATH=sandbox $(UV) run streamlit run sandbox/layer_inspector/app.py --server.port 5955
+
+viewer-build:  ## 表示用のイメージをビルド
+	docker compose build viewer
+
+viewer-up:   ## 表示用のコンテナを起動 (結果ファイルを読み取り専用でマウント)
+	docker compose up viewer
 
 docker-build:  ## イメージをビルド
 	docker compose build
