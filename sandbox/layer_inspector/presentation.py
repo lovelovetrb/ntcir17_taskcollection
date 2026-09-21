@@ -4,55 +4,38 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from hidden_subspace.corpus.judgements import GRADE_VALUES
-from hidden_subspace.experiment.results import TopicResult
-from layer_inspector.documents import RankedDocument
-from layer_inspector.inputs import ModelInputs
-from layer_inspector.selection import TopicChoice
-
-GRADE_LABELS = {value: label for label, value in GRADE_VALUES.items()}
-"""grade から配布データの表記 (A / B / C) への対応。"""
-UNJUDGED = "未判定"
+from layer_inspector.view import DocumentView, TopicView, grade_label, readable
 
 Row = dict[str, str | int | float]
 
 
-def grade_label(grade: int | None) -> str:
-    return UNJUDGED if grade is None else GRADE_LABELS[grade]
-
-
-def layer_of(result: TopicResult) -> int:
-    (layer,) = result.configuration.layers
-    return layer
-
-
-def topic_rows(choices: Sequence[TopicChoice], inputs: ModelInputs, metric: str) -> list[Row]:
+def topic_rows(topics: Sequence[TopicView], metric: str) -> list[Row]:
     return [
         {
-            "トピック": choice.topic_id,
-            "クエリ": inputs.queries[choice.topic_id],
-            "浅い層": layer_of(choice.shallow),
-            f"浅い層の {metric}": choice.shallow.metrics[metric],
-            "深い層": layer_of(choice.deep),
-            f"深い層の {metric}": choice.deep.metrics[metric],
-            "差": choice.margin,
+            "トピック": topic.topic_id,
+            "クエリ": readable(topic.query),
+            "浅い層": topic.shallow_layer,
+            f"浅い層の {metric}": topic.shallow_metrics[metric],
+            "深い層": topic.deep_layer,
+            f"深い層の {metric}": topic.deep_metrics[metric],
+            "差": topic.margin,
         }
-        for choice in choices
+        for topic in topics
     ]
 
 
-def metric_rows(choice: TopicChoice) -> list[Row]:
+def metric_rows(topic: TopicView) -> list[Row]:
     """指標を行に、浅い側と深い側の層を列にする。"""
-    shallow = f"層 {layer_of(choice.shallow)}"
-    deep = f"層 {layer_of(choice.deep)}"
+    shallow = f"層 {topic.shallow_layer}"
+    deep = f"層 {topic.deep_layer}"
     return [
-        {"指標": name, shallow: value, deep: choice.deep.metrics[name]}
-        for name, value in choice.shallow.metrics.items()
+        {"指標": name, shallow: value, deep: topic.deep_metrics[name]}
+        for name, value in topic.shallow_metrics.items()
     ]
 
 
 def document_rows(
-    documents: Sequence[RankedDocument],
+    documents: Sequence[DocumentView],
     favors_shallow: bool,
     shallow_layer: int,
     deep_layer: int,
