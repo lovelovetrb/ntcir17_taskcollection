@@ -67,6 +67,6 @@ dev = [
     "pytest>=9.1.1",
     "ruff>=0.16.5",
 ]
-sandbox = [
+viewer = [
     "streamlit>=1.63.0",
 ]
