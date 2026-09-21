@@ -1,4 +1,4 @@
-.PHONY: help sync lint fmt fmt-check typecheck test test-fast check layer-inspector docker-build docker-shell
+.PHONY: help sync lint fmt fmt-check typecheck test test-fast check layer-inspector-build layer-inspector docker-build docker-shell
 
 UV ?= uv
 
@@ -30,7 +30,10 @@ test-fast:   ## 実データを触らないテストのみ
 
 check: lint fmt-check typecheck test   ## CI と同じ一式
 
-layer-inspector:  ## 層ごとの検索結果を読むビューアを起動 (初回は GPU で結果ファイルを作る)
+layer-inspector-build:  ## ビューアの結果ファイルを作る (GPU が要る)
+	PYTHONPATH=sandbox $(UV) run python -m layer_inspector.build
+
+layer-inspector:  ## 層ごとの検索結果を読むビューアを起動 (結果ファイルが要る)
 	PYTHONPATH=sandbox $(UV) run streamlit run sandbox/layer_inspector/app.py --server.port 5955
 
 docker-build:  ## イメージをビルド
