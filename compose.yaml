@@ -26,5 +26,16 @@ services:
     stdin_open: true
     tty: true
 
+  viewer:
+    build:
+      context: .
+      dockerfile: Dockerfile.viewer
+    image: ntcir17-taskcollection:viewer
+    ports:
+      - "${LAYER_INSPECTOR_PORT:-5955}:5955"
+    volumes:
+      # 結果ファイルには NTCIR の文書本文が入るため、イメージに入れず読み取り専用でマウントする
+      - ${LAYER_INSPECTOR_RESULT_FILE:-./results/cl-tohoku/bert-base-japanese-v3/layer-inspector/inspection.json}:/data/inspection.json:ro
+
 volumes:
   uv-cache:
