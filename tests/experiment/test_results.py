@@ -7,12 +7,15 @@
 from __future__ import annotations
 
 import pytest
+import torch
 
+from hidden_subspace.evaluation import Evaluation
 from hidden_subspace.experiment.results import (
     Configuration,
     ConfigurationResult,
     DimensionChoice,
     TopicResult,
+    results_of_evaluation,
 )
 
 METRICS = {"nDCG@10": 0.19, "Recall@1000": 0.30}
@@ -106,3 +109,21 @@ def test_a_record_missing_a_field_is_rejected() -> None:
 
     with pytest.raises(KeyError):
         TopicResult.from_record(record)
+
+
+def test_an_evaluation_becomes_one_summary_and_one_row_per_topic() -> None:
+    """指標の計算結果を記録の型に詰める。値はテンソルではなく float で入る。"""
+    evaluation = Evaluation(
+        topic_ids=("0001", "0002"),
+        scores={"nDCG@1": torch.tensor([1.0, 0.0]), "Recall@1": torch.tensor([0.5, 0.0])},
+    )
+
+    summary, per_topic = results_of_evaluation(
+        "layer-sweep", configuration_of(DimensionChoice(kind="all")), evaluation
+    )
+
+    assert summary.metrics == {"nDCG@1": 0.5, "Recall@1": 0.25}
+    assert (summary.zero_norm_queries, summary.zero_norm_documents) == (0, 0)
+    assert [r.topic_id for r in per_topic] == ["0001", "0002"]
+    assert per_topic[0].metrics == {"nDCG@1": 1.0, "Recall@1": 0.5}
+    assert all(isinstance(v, float) for r in per_topic for v in r.metrics.values())

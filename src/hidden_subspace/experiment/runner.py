@@ -11,6 +11,7 @@ from hidden_subspace.experiment.results import (
     Configuration,
     ConfigurationResult,
     TopicResult,
+    results_of_evaluation,
 )
 from hidden_subspace.retrieval import Ranking, rank_documents
 from hidden_subspace.selection import Selector
@@ -69,29 +70,15 @@ def run_experiment(
             normalize_layers=plan.normalize_layers,
         )
         outcome = _evaluate_plan(plan, documents, queries, relevance, ks)
-        evaluation = outcome.evaluation
-
-        configurations.append(
-            ConfigurationResult(
-                experiment=experiment,
-                configuration=configuration,
-                metrics=evaluation.macro_average(),
-                zero_norm_queries=outcome.zero_norm_queries,
-                zero_norm_documents=outcome.zero_norm_documents,
-            )
+        summary, per_topic = results_of_evaluation(
+            experiment,
+            configuration,
+            outcome.evaluation,
+            zero_norm_queries=outcome.zero_norm_queries,
+            zero_norm_documents=outcome.zero_norm_documents,
         )
-        for row, topic_id in enumerate(evaluation.topic_ids):
-            topics.append(
-                TopicResult(
-                    experiment=experiment,
-                    configuration=configuration,
-                    topic_id=topic_id,
-                    metrics={
-                        name: float(values[row].item())
-                        for name, values in evaluation.scores.items()
-                    },
-                )
-            )
+        configurations.append(summary)
+        topics.extend(per_topic)
 
     return ExperimentResults(configurations=configurations, topics=topics)
 
