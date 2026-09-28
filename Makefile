@@ -1,4 +1,4 @@
-.PHONY: help sync lint fmt fmt-check typecheck test test-fast check layer-inspector-build layer-inspector viewer-build viewer-up docker-build docker-shell
+.PHONY: help sync lint fmt fmt-check typecheck test test-fast check layer-inspector-build layer-inspector viewer-build viewer-up bm25-build bm25 docker-build docker-shell
 
 UV ?= uv
 
@@ -41,6 +41,14 @@ viewer-build:  ## 表示用のイメージをビルド
 
 viewer-up:   ## 表示用のコンテナを起動 (結果ファイルを読み取り専用でマウント)
 	docker compose up viewer
+
+bm25-build:  ## BM25 ベースライン用のイメージをビルド (ADR-0022)
+	docker compose build bm25
+
+bm25:        ## 組織者のノートブックを実行して BM25 の run ファイルを作る (FORCE=1 で作り直す)
+	# マウント先を先に作る。無いと Docker が root 所有で作ってしまい、コンテナ内のユーザーが書けない
+	mkdir -p cache/bm25/testcollections cache/bm25/indexes cache/bm25/ir_datasets results/bm25
+	BM25_UID=$$(id -u) BM25_GID=$$(id -g) docker compose run --rm bm25
 
 docker-build:  ## イメージをビルド
 	docker compose build

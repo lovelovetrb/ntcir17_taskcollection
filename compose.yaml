@@ -37,5 +37,22 @@ services:
       # 結果ファイルには NTCIR の文書本文が入るため、イメージに入れず読み取り専用でマウントする
       - ${LAYER_INSPECTOR_RESULT_FILE:-./results/cl-tohoku/bert-base-japanese-v3/layer-inspector/inspection.json}:/data/inspection.json:ro
 
+  bm25:
+    build:
+      context: .
+      dockerfile: bm25/Dockerfile
+    image: ntcir17-taskcollection:bm25
+    # 生成物をホストのユーザー所有にする。Makefile の bm25 が id -u / id -g を渡す
+    user: "${BM25_UID:-1000}:${BM25_GID:-1000}"
+    volumes:
+      - ${NTCIR_DATA_DIR:-${HOME}/dev/dataset/ntcir17}:/data/ntcir:ro
+      # 展開した文書本文と ir_datasets のキャッシュは配布物と同じ扱いで、リポジトリの外 (cache/) に置く
+      - ./cache/bm25/testcollections:/work/transfer1/testcollections
+      - ./cache/bm25/indexes:/work/transfer1/indexes
+      - ./cache/bm25/ir_datasets:/work/ir_datasets
+      - ./results/bm25:/work/transfer1/runs
+    environment:
+      FORCE: ${FORCE:-0}
+
 volumes:
   uv-cache:
