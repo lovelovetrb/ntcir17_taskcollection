@@ -70,3 +70,6 @@ dev = [
 viewer = [
     "streamlit>=1.63.0",
 ]
+analysis = [
+    "matplotlib>=3.10",
+]
