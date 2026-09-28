@@ -42,7 +42,7 @@ docstring-code-format = true
 
 [tool.pyrefly]
 project-includes = ["**/*.py"]
-project-excludes = ["docs/**", ".venv/**"]
+project-excludes = ["docs/**", ".venv/**", "bm25/**"]   # bm25/ はコンテナ (Python 3.7) で動くスクリプト
 search-path = ["sandbox"]
 untyped-def-behavior = "check-and-infer-return-type"
 

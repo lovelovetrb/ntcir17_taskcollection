@@ -64,6 +64,7 @@ RUN python -c "import os, pyterrier as pt; pt.init(version=os.environ['TERRIER_V
 ENV PIP_NO_INDEX=1
 
 COPY bm25/execute.sh /work/execute.sh
+COPY bm25/tf_run.py /work/tf_run.py
 
 WORKDIR /work/transfer1/notebooks
 CMD ["bash", "/work/execute.sh"]

@@ -51,6 +51,7 @@ services:
       - ./cache/bm25/indexes:/work/transfer1/indexes
       - ./cache/bm25/ir_datasets:/work/ir_datasets
       - ./results/bm25:/work/transfer1/runs
+      - ./results/tf-per-token:/work/tf-per-token
     environment:
       FORCE: ${FORCE:-0}
 
