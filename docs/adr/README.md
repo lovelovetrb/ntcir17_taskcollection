@@ -37,3 +37,4 @@
 | [0022](0022-bm25-organizer-notebooks-in-docker.md) | BM25 は組織者のノートブックを当時のバージョンで固定した Docker で実行 | Accepted |
 | [0023](0023-evaluate-bm25-run-as-layer-records.md) | BM25 の run を層と同じ定義で評価し、同じ形の記録として run の隣に置く | Accepted |
 | [0024](0024-sandbox-analysis-layout.md) | 分析のスクリプトと図は sandbox/analysis/ に分析ごとに置き、共通の部品は作らない | Accepted |
+| [0025](0025-tf-per-token-run-and-generic-run-evaluation.md) | TF ÷ トークン数 の run を BM25 と同じインデックスから作り、run の評価は置き場所から model_id を導く | Accepted |
