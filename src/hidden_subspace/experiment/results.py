@@ -10,6 +10,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
+from hidden_subspace.evaluation import Evaluation
+
 
 @dataclass(frozen=True)
 class DimensionChoice:
@@ -116,3 +118,35 @@ class TopicResult:
             topic_id=record["topic_id"],
             metrics=dict(record["metrics"]),
         )
+
+
+def results_of_evaluation(
+    experiment: str,
+    configuration: Configuration,
+    evaluation: Evaluation,
+    *,
+    zero_norm_queries: int = 0,
+    zero_norm_documents: int = 0,
+) -> tuple[ConfigurationResult, list[TopicResult]]:
+    """指標の計算結果を、構成 1 件の記録とトピックごとの記録にする。
+
+    `zero_norm_queries` と `zero_norm_documents` は向きを持たないベクトルの件数で、
+    ベクトルで検索しない場合は 0 のままでよい。
+    """
+    summary = ConfigurationResult(
+        experiment=experiment,
+        configuration=configuration,
+        metrics=evaluation.macro_average(),
+        zero_norm_queries=zero_norm_queries,
+        zero_norm_documents=zero_norm_documents,
+    )
+    per_topic = [
+        TopicResult(
+            experiment=experiment,
+            configuration=configuration,
+            topic_id=topic_id,
+            metrics={name: float(values[row].item()) for name, values in evaluation.scores.items()},
+        )
+        for row, topic_id in enumerate(evaluation.topic_ids)
+    ]
+    return summary, per_topic
