@@ -35,3 +35,4 @@
 | [0020](0020-layer-inspector-viewer.md) | 層ごとの検索結果を読むビューアを Streamlit で作る | Superseded in part by 0021 |
 | [0021](0021-split-build-and-view.md) | ビューアを結果ファイルの作成と表示に分け、表示側を軽い環境で動かす | Accepted |
 | [0022](0022-bm25-organizer-notebooks-in-docker.md) | BM25 は組織者のノートブックを当時のバージョンで固定した Docker で実行 | Accepted |
+| [0023](0023-evaluate-bm25-run-as-layer-records.md) | BM25 の run を層と同じ定義で評価し、同じ形の記録として run の隣に置く | Accepted |
