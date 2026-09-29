@@ -8,6 +8,7 @@ data/
 
 # 生成物
 results/
+sandbox/results/
 indexes/
 models/
 cache/
@@ -43,3 +44,6 @@ htmlcov/
 
 # Jupyter
 .ipynb_checkpoints/
+
+# 環境変数
+.env
