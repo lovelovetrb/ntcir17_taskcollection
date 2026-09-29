@@ -72,4 +72,5 @@ viewer = [
 ]
 analysis = [
     "matplotlib>=3.10",
+    "scipy>=1.15",
 ]
