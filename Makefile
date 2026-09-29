@@ -55,7 +55,7 @@ bm25-tf:     ## TF ÷ トークン数 の run を BM25 と同じインデック�
 	BM25_UID=$$(id -u) BM25_GID=$$(id -g) docker compose run --rm bm25 python /work/tf_run.py
 
 bm25-evaluate:  ## BM25 の run を層と同じ定義で評価して記録を書く (ADR-0023)
-	$(UV) run python evaluate_bm25.py
+	$(UV) run python evaluate_run.py
 
 docker-build:  ## イメージをビルド
 	docker compose build
