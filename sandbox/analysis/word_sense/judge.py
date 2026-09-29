@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import Literal, get_args
+from enum import StrEnum
 
 from google import genai
 from google.genai import errors, types
@@ -15,11 +15,14 @@ from analysis.word_sense.records import LlmOutput
 RETRIES = 5
 BACKOFF_SECONDS = 4.0
 
-Category = Literal["一致", "一部一致", "別の意味で解釈", "無関係"]
-"""判定の 4 段階。構造化出力の型とプロンプトの説明の両方がここから作られる。"""
 
-CATEGORIES: tuple[str, ...] = get_args(Category)
-OTHER_SENSE = "別の意味で解釈"
+class Category(StrEnum):
+    """判定の 4 段階。構造化出力の型とプロンプトの説明の両方がここから作られる。"""
+
+    MATCH = "一致"
+    PARTIAL_MATCH = "一部一致"
+    OTHER_SENSE = "別の意味で解釈"
+    UNRELATED = "無関係"
 
 
 class Verdict(BaseModel):
@@ -36,7 +39,7 @@ class Judge:
         info = self.client.models.get(model=model_name)
         self.model_label = f"{model_name} ({info.version})" if info.version else model_name
         self.config = types.GenerateContentConfig(
-            system_instruction=instructions(CATEGORIES),
+            system_instruction=instructions([c.value for c in Category]),
             response_mime_type="application/json",
             response_schema=Verdict,
             # 関数呼び出しは使わない。既定のままだと呼び出しごとに勧告が出る
@@ -64,5 +67,7 @@ class Judge:
         parsed = response.parsed
         if not isinstance(parsed, Verdict):
             raise ValueError(f"応答を判定として読めませんでした。応答: {raw[:200]}")
-        reason = parsed.reason if parsed.category == OTHER_SENSE else ""
-        return LlmOutput(model=self.model_label, category=parsed.category, reason=reason, raw=raw)
+        reason = parsed.reason if parsed.category is Category.OTHER_SENSE else ""
+        return LlmOutput(
+            model=self.model_label, category=parsed.category.value, reason=reason, raw=raw
+        )
