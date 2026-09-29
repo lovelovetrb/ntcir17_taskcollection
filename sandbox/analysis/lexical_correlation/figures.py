@@ -93,7 +93,7 @@ def save_scatter_grid(
 
 
 def save_correlation_lines(series: Sequence[CorrelationSeries], *, path: Path) -> None:
-    """層を横軸にした相関の折れ線。区間は図に入れず、表 (correlation.md) に持たせる。"""
+    """層を横軸にした相関の折れ線。区間は図に入れず、表 (output/correlation.md) に持たせる。"""
     figure, axis = plt.subplots(figsize=(8, 4.8))
     for item in series:
         axis.plot(

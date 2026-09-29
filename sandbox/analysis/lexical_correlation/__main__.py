@@ -2,7 +2,7 @@
 
 浅い層が語の重みを持たない字面一致として振る舞うなら、浅い層は BM25 より TF との相関が高く、
 深くなるほど両方との相関が下がるはず。散布図は層ごと、折れ線は層を横軸にして、
-モデルと物差しの組み合わせごとに描く。
+モデルと物差しの組み合わせごとに描き、図と表は output/ に置く。
 
     PYTHONPATH=sandbox uv run python -m analysis.lexical_correlation
 """
@@ -22,7 +22,7 @@ from analysis.lexical_correlation.figures import (
 from analysis.lexical_correlation.records import LayerScores, read_layer_scores, read_run_scores
 
 RESULTS_ROOT = Path("results")
-OUTPUT_DIR = Path(__file__).parent
+OUTPUT_DIR = Path(__file__).parent / "output"
 MODELS = {
     "bert": "cl-tohoku/bert-base-japanese-v3",
     "simcse": "cl-nagoya/unsup-simcse-ja-base",
@@ -65,6 +65,7 @@ def table(series: list[CorrelationSeries]) -> str:
 
 
 def main() -> None:
+    OUTPUT_DIR.mkdir(exist_ok=True)
     series: list[CorrelationSeries] = []
     for model, model_id in MODELS.items():
         layer_scores = read_layer_scores(RESULTS_ROOT, model_id)
