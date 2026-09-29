@@ -12,7 +12,6 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-CATEGORIES = ("一致", "一部一致", "別の意味で解釈", "無関係")
 SIDES = ("shallow", "deep")
 
 
@@ -21,6 +20,7 @@ class LlmOutput:
     model: str
     """判定に使ったモデルの名前とバージョン。"""
     category: str
+    """4 段階のいずれか。定義は judge.py の `Category`。"""
     reason: str
     """「別の意味で解釈」のときだけ、クエリでの意味と検索テキストでの意味。それ以外は空。"""
     raw: str

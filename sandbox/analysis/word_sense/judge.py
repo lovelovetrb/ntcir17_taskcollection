@@ -3,23 +3,29 @@
 from __future__ import annotations
 
 import time
-from typing import Literal
+from typing import Literal, get_args
 
 from google import genai
 from google.genai import errors, types
 from pydantic import BaseModel
 
 from analysis.word_sense.prompt import build_prompt, instructions
-from analysis.word_sense.records import CATEGORIES, LlmOutput
+from analysis.word_sense.records import LlmOutput
 
 RETRIES = 5
 BACKOFF_SECONDS = 4.0
 
+Category = Literal["一致", "一部一致", "別の意味で解釈", "無関係"]
+"""判定の 4 段階。構造化出力の型とプロンプトの説明の両方がここから作られる。"""
+
+CATEGORIES: tuple[str, ...] = get_args(Category)
+OTHER_SENSE = "別の意味で解釈"
+
 
 class Verdict(BaseModel):
-    """構造化出力の形。category は 4 択に限る。"""
+    """構造化出力の形。"""
 
-    category: Literal["一致", "一部一致", "別の意味で解釈", "無関係"]
+    category: Category
     reason: str
 
 
@@ -30,7 +36,7 @@ class Judge:
         info = self.client.models.get(model=model_name)
         self.model_label = f"{model_name} ({info.version})" if info.version else model_name
         self.config = types.GenerateContentConfig(
-            system_instruction=instructions(),
+            system_instruction=instructions(CATEGORIES),
             response_mime_type="application/json",
             response_schema=Verdict,
             # 関数呼び出しは使わない。既定のままだと呼び出しごとに勧告が出る
@@ -58,7 +64,5 @@ class Judge:
         parsed = response.parsed
         if not isinstance(parsed, Verdict):
             raise ValueError(f"応答を判定として読めませんでした。応答: {raw[:200]}")
-        if parsed.category not in CATEGORIES:
-            raise ValueError(f"想定外の分類です: {parsed.category}")
-        reason = parsed.reason if parsed.category == "別の意味で解釈" else ""
+        reason = parsed.reason if parsed.category == OTHER_SENSE else ""
         return LlmOutput(model=self.model_label, category=parsed.category, reason=reason, raw=raw)

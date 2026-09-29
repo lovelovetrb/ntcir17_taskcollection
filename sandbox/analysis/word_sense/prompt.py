@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from analysis.word_sense.records import CATEGORIES
+from collections.abc import Sequence
 
 INSTRUCTIONS = """\
 あなたは情報検索の評価者です。検索クエリと、検索で返された 1 件のテキスト (学術論文の題名と抄録) を
@@ -32,8 +32,8 @@ INSTRUCTIONS = """\
 """
 
 
-def instructions() -> str:
-    return INSTRUCTIONS.format(categories=" / ".join(CATEGORIES))
+def instructions(categories: Sequence[str]) -> str:
+    return INSTRUCTIONS.format(categories=" / ".join(categories))
 
 
 def build_prompt(title: str, description: str, document_text: str) -> str:
