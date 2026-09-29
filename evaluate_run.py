@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""BM25 の run を層の実験と同じ定義で評価し、記録を run の隣に書き出す (ADR-0023)。
+"""run ファイルを層の実験と同じ定義で評価し、記録を run の隣に書き出す (ADR-0023, ADR-0025)。
 
-run は組織者のノートブックで作る (ADR-0022, `make bm25`)。ここでは run を読んで
-`evaluate` に通すだけで、コンテナも GPU も要らない。
+run は `results/<model_id>/<experiment>/` に置く。BM25 の run は組織者のノートブックで
+(ADR-0022, `make bm25`)、TF ÷ トークン数 の run は `make bm25-tf` で作る。ここでは run を
+読んで `evaluate` に通すだけで、コンテナも GPU も要らない。
 
 使い方:
-    python evaluate_bm25.py
-    python evaluate_bm25.py --run results/bm25/ntcir17-transfer/train/MyRun-BM25.res.gz
+    python evaluate_run.py
+    python evaluate_run.py --run results/tf-per-token/ntcir17-transfer/train/run.res.gz
 """
 
 from __future__ import annotations
@@ -26,7 +27,6 @@ from hidden_subspace.experiment.runner import ExperimentResults
 from hidden_subspace.experiment.writer import write_results
 from hidden_subspace.trec_run import ranking_from_run, read_run, relevance_of_retrieved
 
-MODEL_ID = "bm25"
 REPORTED = ("nDCG@10", "nDCG@1000", "Recall@1000")
 
 
@@ -37,7 +37,7 @@ def parse_arguments() -> argparse.Namespace:
         "--run",
         type=Path,
         default=Path("results/bm25/ntcir17-transfer/train/MyRun-BM25.res.gz"),
-        help="評価する run ファイル。results/bm25/ の下に置く",
+        help="評価する run ファイル。results/<model_id>/<experiment>/ の下に置く",
     )
     parser.add_argument(
         "--data",
@@ -48,22 +48,32 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def experiment_of(run_path: Path, results_root: Path) -> str:
-    """run のあるディレクトリを experiment にする。記録は run の隣に書かれる。"""
-    base = results_root / MODEL_ID
+def locate(run_path: Path, results_root: Path) -> tuple[str, str]:
+    """run の置き場所から model_id と experiment を導く。記録は run の隣に書かれる。
+
+    `results/<model_id>/<experiment>/<run>` の先頭のディレクトリが model_id、run のある
+    ディレクトリまでの残りが experiment。
+    """
     try:
-        return run_path.parent.relative_to(base).as_posix()
+        relative = run_path.parent.relative_to(results_root)
     except ValueError:
         raise SystemExit(
-            f"run が {base}/ の下にありません: {run_path}\n"
-            f"run を {base}/ の下に置くか、--results で置き場所を指定してください。"
+            f"run が {results_root}/ の下にありません: {run_path}\n"
+            f"run を {results_root}/<model_id>/<experiment>/ に置くか、"
+            "--results で置き場所を指定してください。"
         ) from None
+    if len(relative.parts) < 2:
+        raise SystemExit(
+            f"run の置き場所から model_id と experiment を導けません: {run_path}\n"
+            f"{results_root}/<model_id>/<experiment>/ の下に置いてください。"
+        )
+    return relative.parts[0], Path(*relative.parts[1:]).as_posix()
 
 
 def main() -> int:
     arguments = parse_arguments()
-    experiment = experiment_of(arguments.run, arguments.results)
-    print(f"run {arguments.run} / experiment {experiment}")
+    model_id, experiment = locate(arguments.run, arguments.results)
+    print(f"run {arguments.run} / model_id {model_id} / experiment {experiment}")
 
     collection = read_collection(Ntcir1Paths(arguments.data / "NTCIR-1"))
     topic_ids = [topic.topic_id for topic in collection.topics]
@@ -79,9 +89,9 @@ def main() -> int:
     relevance = align_relevance(collection.qrels, topic_ids, document_ids)
     evaluation = evaluate(ranking, relevance_of_retrieved(relevance, run), CUTOFFS)
 
-    # 層の記録と同じ型で書く。layers 以下は BM25 では意味を持たない (ADR-0023)
+    # 層の記録と同じ型で書く。layers 以下は run の評価では意味を持たない (ADR-0023)
     configuration = Configuration(
-        model_id=MODEL_ID,
+        model_id=model_id,
         layers=(),
         dimensions=DimensionChoice(kind="all"),
         normalize_layers=False,
