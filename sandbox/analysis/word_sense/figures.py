@@ -1,4 +1,7 @@
-"""4 区分の分布を積み上げ棒グラフにする。図の文字は英語にする (環境の日本語フォントに依らない)。"""
+"""4 区分の分布を積み上げ棒グラフにする。
+
+図の文字は英語にする。トピックの題名だけは日本語なので、目盛りのラベルに日本語フォントを使う。
+"""
 
 from __future__ import annotations
 
@@ -27,6 +30,12 @@ COLORS = {
     Category.UNRELATED: "#eda100",
 }
 """検証済みの 4 色 (dataviz の既定パレットの 1〜4 番)。区分の順に固定する。"""
+
+JAPANESE_FONTS = ["DejaVu Sans", "Noto Sans CJK JP", "IPAexGothic"]
+"""欧文は DejaVu Sans、日本語はその次に見つかったフォントで描く。
+
+日本語フォントが無い環境では題名が豆腐になる。
+"""
 
 SIDE_LABELS = {"shallow": "shallow (best of layers 1-2)", "deep": "deep (best of layers 11-12)"}
 GRID_COLOR = "#d8d7d2"
@@ -87,7 +96,7 @@ def save_by_topic(distribution: Distribution, *, model: str, path: Path) -> None
     sides = list(distribution.counts)
     positions = np.arange(len(distribution.topic_ids))
     figure, axes = plt.subplots(
-        len(sides), 1, figsize=(max(12, 0.2 * len(positions)), 7.5), sharex=True
+        len(sides), 1, figsize=(max(12, 0.2 * len(positions)), 10), sharex=True
     )
     for axis, side in zip(axes, sides, strict=True):
         _stack(axis, positions, distribution.proportions(side), width=0.8)
@@ -97,7 +106,11 @@ def save_by_topic(distribution: Distribution, *, model: str, path: Path) -> None
         axis.yaxis.grid(True, color=GRID_COLOR, linewidth=0.5)
         axis.set_axisbelow(True)
 
-    axes[-1].set_xticks(positions, distribution.topic_ids, rotation=90, fontsize=7)
+    labels = [
+        f"{topic_id} {title}"
+        for topic_id, title in zip(distribution.topic_ids, distribution.titles, strict=True)
+    ]
+    axes[-1].set_xticks(positions, labels, rotation=90, fontsize=7, fontfamily=JAPANESE_FONTS)
     axes[-1].set_xlabel("topic")
     axes[0].legend(loc="lower left", bbox_to_anchor=(0, 1.02), ncol=len(CATEGORIES), frameon=False)
     figure.suptitle(f"{model}: word-sense judgements of top-100 documents per topic")
