@@ -110,7 +110,8 @@ def save_by_topic(distribution: Distribution, *, model: str, path: Path) -> None
         f"{topic_id} {title}"
         for topic_id, title in zip(distribution.topic_ids, distribution.titles, strict=True)
     ]
-    axes[-1].set_xticks(positions, labels, rotation=90, fontsize=7, fontfamily=JAPANESE_FONTS)
+    # 上から下に読む向きにして、軸のすぐ下に ID が来るようにする
+    axes[-1].set_xticks(positions, labels, rotation=-90, fontsize=7, fontfamily=JAPANESE_FONTS)
     axes[-1].set_xlabel("topic")
     axes[0].legend(loc="lower left", bbox_to_anchor=(0, 1.02), ncol=len(CATEGORIES), frameon=False)
     figure.suptitle(f"{model}: word-sense judgements of top-100 documents per topic")
