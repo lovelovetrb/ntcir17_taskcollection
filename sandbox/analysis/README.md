@@ -18,5 +18,5 @@ PYTHONPATH=sandbox uv run python -m analysis.lexical_correlation
 判定の生データは `sandbox/results/word_sense/` (git 管理外) に置く。
 
 ```
-PYTHONPATH=sandbox uv run python -m analysis.word_sense.collect_judgements --model bert
+CUDA_VISIBLE_DEVICES=<DEVICE_ID> PYTHONPATH=sandbox uv run --env-file .env python -m analysis.word_sense.collect_judgements --model bert
 ```
