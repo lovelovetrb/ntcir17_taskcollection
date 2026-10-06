@@ -119,3 +119,58 @@ def save_topic_delta_heatmaps(deltas: RemovalDeltas, *, path: Path) -> None:
     )
     figure.savefig(path, dpi=100, bbox_inches="tight")
     plt.close(figure)
+
+
+@dataclass(frozen=True)
+class CumulativeShares:
+    """`values[i, c]` は層 `layers[i]` で上位 `counts[c]` 本の主成分が占める分散の割合。"""
+
+    model: str
+    layers: tuple[int, ...]
+    counts: tuple[int, ...]
+    values: np.ndarray
+
+
+def save_cumulative_share_grid(shares: CumulativeShares, *, path: Path) -> None:
+    """除いた主成分の累積の分散占有率を、mean-delta と同じ枠の並びと横軸で描く。
+
+    並びと横軸を揃えるのは、2 枚を並べて同じ位置の枠どうしを見比べるため。
+    """
+    columns = 4
+    rows = -(-len(shares.layers) // columns)
+    figure, axes = plt.subplots(
+        rows, columns, figsize=(3.2 * columns, 2.5 * rows), sharex=True, sharey=True, squeeze=False
+    )
+    positions = np.arange(len(shares.counts))
+
+    for index, axis in enumerate(axes.flat):
+        if index >= len(shares.layers):
+            axis.set_axis_off()
+            continue
+        axis.plot(
+            positions,
+            100 * shares.values[index],
+            color=LINE_COLOR,
+            linewidth=2,
+            marker="o",
+            markersize=4,
+        )
+        axis.set_title(f"layer {shares.layers[index]}", loc="left", fontsize=10)
+        axis.set_ylim(0, 100)
+        axis.set_xticks(positions, [str(count) for count in shares.counts])
+        axis.grid(True, axis="y", color=GRID_COLOR, linewidth=0.5)
+        axis.tick_params(labelsize=8, labelbottom=True)
+        for side in ("top", "right"):
+            axis.spines[side].set_visible(False)
+        if index % columns == 0:
+            axis.set_ylabel("cumulative variance (%)", fontsize=9)
+        if index + columns >= len(shares.layers):
+            axis.set_xlabel("k", fontsize=9)
+
+    figure.suptitle(
+        f"{shares.model}: share of document variance in the top-k principal components",
+        fontsize=12,
+    )
+    figure.tight_layout()
+    figure.savefig(path, dpi=110)
+    plt.close(figure)

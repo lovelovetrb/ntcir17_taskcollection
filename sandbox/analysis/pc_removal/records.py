@@ -1,4 +1,4 @@
-"""層・条件・トピックごとの指標を JSON Lines で書き、読み戻す。
+"""層・条件・トピックごとの指標と、層ごとの分散占有率を JSON Lines で書き、読み戻す。
 
 記録は output/ に置くが、拡張子が .jsonl なのでコミットされない (ADR-0024)。
 run.py を回せば作り直せる。
@@ -29,7 +29,16 @@ class TopicRecord:
     metrics: dict[str, float]
 
 
-def write_records(records: Sequence[TopicRecord], path: Path) -> None:
+@dataclass(frozen=True)
+class VarianceRecord:
+    model_id: str
+    layer: int
+    count: int
+    cumulative_share: float
+    """上位 `count` 本の主成分の分散占有率の和。`count` が 0 なら 0。"""
+
+
+def write_records(records: Sequence[TopicRecord | VarianceRecord], path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as file:
         for record in records:
@@ -37,11 +46,17 @@ def write_records(records: Sequence[TopicRecord], path: Path) -> None:
 
 
 def read_records(path: Path) -> list[TopicRecord]:
+    return [TopicRecord(**row) for row in _read_rows(path)]
+
+
+def read_variance_records(path: Path) -> list[VarianceRecord]:
+    return [VarianceRecord(**row) for row in _read_rows(path)]
+
+
+def _read_rows(path: Path) -> list[dict]:
     if not path.is_file():
         raise FileNotFoundError(
             f"記録がありません: {path}\n"
             "先に PYTHONPATH=sandbox uv run python -m analysis.pc_removal.run を実行してください。"
         )
-    return [
-        TopicRecord(**json.loads(line)) for line in path.read_text(encoding="utf-8").splitlines()
-    ]
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
