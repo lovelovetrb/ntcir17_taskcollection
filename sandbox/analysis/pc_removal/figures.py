@@ -28,13 +28,15 @@ DIVERGING = LinearSegmentedColormap.from_list(
 
 @dataclass(frozen=True)
 class RemovalDeltas:
-    """生からの差。
+    """基準の条件からの差。
 
     `values[i, j, c]` は層 `layers[i]`、トピック `topic_ids[j]` で `counts[c]` 本除いたときの値。
     """
 
     model: str
     metric: str
+    baseline: str
+    """差を取る基準の条件。`raw` なら中心化の効果を含み、`k=0` なら除去だけの効果になる。"""
     layers: tuple[int, ...]
     topic_ids: tuple[str, ...]
     counts: tuple[int, ...]
@@ -66,12 +68,12 @@ def save_mean_delta_grid(deltas: RemovalDeltas, *, path: Path) -> None:
         for side in ("top", "right"):
             axis.spines[side].set_visible(False)
         if index % columns == 0:
-            axis.set_ylabel(f"Δ {deltas.metric} vs raw", fontsize=9)
+            axis.set_ylabel(f"Δ {deltas.metric} vs {deltas.baseline}", fontsize=9)
         if index + columns >= len(deltas.layers):
             axis.set_xlabel("k (0 = centering only)", fontsize=9)
 
     figure.suptitle(
-        f"{deltas.model}: change from raw after removing top-k principal components "
+        f"{deltas.model}: change from {deltas.baseline} after removing top-k principal components "
         f"(mean of {len(deltas.topic_ids)} topics)",
         fontsize=12,
     )
@@ -110,10 +112,11 @@ def save_topic_delta_heatmaps(deltas: RemovalDeltas, *, path: Path) -> None:
         ax=list(axes),
         fraction=0.015,
         pad=0.01,
-        label=f"Δ {deltas.metric} vs raw (warm = better, cool = worse)",
+        label=f"Δ {deltas.metric} vs {deltas.baseline} (warm = better, cool = worse)",
     )
     figure.suptitle(
-        f"{deltas.model}: per-topic change from raw after removing top-k principal components",
+        f"{deltas.model}: per-topic change from {deltas.baseline} "
+        "after removing top-k principal components",
         fontsize=12,
         y=0.91,
     )
