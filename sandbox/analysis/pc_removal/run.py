@@ -1,4 +1,4 @@
-"""層ごとに文書集合の上位主成分を除いて検索し、トピック別の指標を記録する (issue #47)。
+"""層ごとに文書集合の上位主成分を除いて検索し、トピック別の指標と分散占有率を記録する (issue #47)。
 
 層ごとに、生 (中心化も除去もしない) と、文書の平均を引いて上位 k 本の主成分を除いた
 条件を評価する。k = 0 は中心化だけをした条件。主成分は全文書から推定し、クエリにも
@@ -16,7 +16,13 @@ from pathlib import Path
 
 import torch
 
-from analysis.pc_removal.records import RAW, TopicRecord, removal_condition, write_records
+from analysis.pc_removal.records import (
+    RAW,
+    TopicRecord,
+    VarianceRecord,
+    removal_condition,
+    write_records,
+)
 from analysis.pc_removal.removal import estimate_common_components
 from hidden_subspace.collection import Ntcir1Paths, read_collection
 from hidden_subspace.encoding.cache import load_cache
@@ -48,8 +54,11 @@ def evaluate_layer(
     documents: HiddenStates,
     queries: HiddenStates,
     relevance: Relevance,
-) -> list[TopicRecord]:
-    """1 層ぶんの全条件を評価する。`documents` と `queries` はその層だけに絞ってある。"""
+) -> tuple[list[TopicRecord], list[VarianceRecord]]:
+    """1 層ぶんの全条件を評価し、除いた主成分の分散占有率も返す。
+
+    `documents` と `queries` はその層だけに絞ってある。
+    """
     (layer,) = documents.layer_indices
 
     def records_of(
@@ -73,6 +82,15 @@ def evaluate_layer(
 
     records = records_of(RAW, documents, queries)
     components = estimate_common_components(documents.values[:, 0, :], max(REMOVED_COUNTS))
+    variances = [
+        VarianceRecord(
+            model_id=model_id,
+            layer=layer,
+            count=count,
+            cumulative_share=float(components.variance_shares[:count].sum().item()),
+        )
+        for count in REMOVED_COUNTS
+    ]
     for count in REMOVED_COUNTS:
         removed_documents = components.remove(documents.values[:, 0, :], count).unsqueeze(1)
         removed_queries = components.remove(queries.values[:, 0, :], count).unsqueeze(1)
@@ -81,7 +99,7 @@ def evaluate_layer(
             replace(documents, values=removed_documents),
             replace(queries, values=removed_queries),
         )
-    return records
+    return records, variances
 
 
 def main() -> None:
@@ -96,15 +114,19 @@ def main() -> None:
         )
 
         records: list[TopicRecord] = []
+        variances: list[VarianceRecord] = []
         for layer in documents.layer_indices:
             print(f"{model} layer {layer}")
-            records += evaluate_layer(
+            layer_records, layer_variances = evaluate_layer(
                 model_id,
                 documents.select_layers([layer]).to(arguments.device),
                 queries.select_layers([layer]).to(arguments.device),
                 relevance,
             )
+            records += layer_records
+            variances += layer_variances
         write_records(records, OUTPUT_DIR / f"metrics-{model}.jsonl")
+        write_records(variances, OUTPUT_DIR / f"variance-{model}.jsonl")
 
 
 if __name__ == "__main__":
