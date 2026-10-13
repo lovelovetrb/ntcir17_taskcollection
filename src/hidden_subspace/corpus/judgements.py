@@ -11,8 +11,11 @@ from pathlib import Path
 
 from hidden_subspace.corpus.archive import read_members
 
-GRADE_VALUES = {"A": 2, "B": 1, "C": 0}
-"""A を適合、B を部分的に適合、C を非適合とする配布データの表記を数値にする。"""
+GRADE_VALUES = {"S": 3, "A": 2, "B": 1, "C": 0}
+"""S を非常に適合、A を適合、B を部分的に適合、C を非適合とする配布データの表記を数値にする。
+
+S は NTCIR-2 にだけある (ADR-0026)。
+"""
 
 
 @dataclass(frozen=True)
