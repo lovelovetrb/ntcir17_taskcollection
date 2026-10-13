@@ -20,6 +20,8 @@ class CommonComponents:
     """`[次元数]`。"""
     directions: Tensor
     """`[次元数, 本数]`。各列が長さ 1 で、互いに直交する。"""
+    variance_shares: Tensor
+    """`[本数]`。各主成分の分散が、中心化した文書の分散の総和に占める割合。"""
 
     def remove(self, values: Tensor, count: int) -> Tensor:
         """平均を引き、上位 `count` 本の主成分の向きの成分を除く。
@@ -47,5 +49,8 @@ def estimate_common_components(documents: Tensor, count: int) -> CommonComponent
     mean = values.mean(dim=0)
     centered = values - mean
     covariance = centered.T @ centered / values.shape[0]
-    _, vectors = torch.linalg.eigh(covariance)
-    return CommonComponents(mean=mean, directions=vectors.flip(1)[:, :count])
+    variances, vectors = torch.linalg.eigh(covariance)
+    shares = variances.flip(0) / covariance.trace()
+    return CommonComponents(
+        mean=mean, directions=vectors.flip(1)[:, :count], variance_shares=shares[:count]
+    )
