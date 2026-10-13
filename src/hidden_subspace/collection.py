@@ -28,8 +28,8 @@ class Ntcir1Paths:
         "topics/topic0031-0083",
     )
     qrels_members: tuple[str, ...] = (
-        "mlir/rel1_ntc1-j1_0001-0030",
-        "mlir/rel1_ntc1-j1_0031-0083",
+        "mlir/rel2_ntc1-j1_0001-0030",
+        "mlir/rel2_ntc1-j1_0031-0083",
     )
 
 

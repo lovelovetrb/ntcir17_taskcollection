@@ -40,8 +40,8 @@ def test_reads_documents_topics_and_qrels_together(tmp_path: Path) -> None:
         tmp_path / "MLIR.TGZ",
         {
             "mlir/ntc1-j1": DOCUMENT,
-            "mlir/rel1_ntc1-j1_0001-0030": QRELS,
-            "mlir/rel1_ntc1-j1_0031-0083": "",
+            "mlir/rel2_ntc1-j1_0001-0030": QRELS,
+            "mlir/rel2_ntc1-j1_0031-0083": "",
         },
     )
     build(
