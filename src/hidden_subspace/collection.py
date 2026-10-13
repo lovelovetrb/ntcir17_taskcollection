@@ -58,6 +58,23 @@ class Ntcir2Paths:
 
 CollectionPaths = Ntcir1Paths | Ntcir2Paths
 
+COLLECTION_NAMES = ("ntcir1", "ntcir2")
+"""実行時に選ぶコレクションの名前。キャッシュと記録のディレクトリ名にも使う (ADR-0026)。"""
+
+
+def collection_paths(name: str, data_root: Path) -> CollectionPaths:
+    """配布物を置いたディレクトリの下で、名前に対応するコレクションのパスを返す。"""
+    match name:
+        case "ntcir1":
+            return Ntcir1Paths(data_root / "NTCIR-1")
+        case "ntcir2":
+            return Ntcir2Paths(data_root / "NTCIR-1", data_root / "NTCIR-2")
+        case _:
+            raise ValueError(
+                f"コレクション {name} はありません。"
+                f"{', '.join(COLLECTION_NAMES)} から選んでください。"
+            )
+
 
 @dataclass(frozen=True)
 class Collection:

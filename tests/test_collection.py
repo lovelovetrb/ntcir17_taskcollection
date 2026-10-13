@@ -6,7 +6,9 @@ import io
 import tarfile
 from pathlib import Path
 
-from hidden_subspace.collection import Ntcir1Paths, Ntcir2Paths, read_collection
+import pytest
+
+from hidden_subspace.collection import Ntcir1Paths, Ntcir2Paths, collection_paths, read_collection
 
 DOCUMENT = """<REC>
 <ACCN>gakkai-0000000001</ACCN>
@@ -96,3 +98,15 @@ def test_reads_ntcir2_with_the_ntcir1_documents(tmp_path: Path) -> None:
     assert [d.title for d in collection.documents] == ["題名", "学会の題名", "研究課題名"]
     assert [t.topic_id for t in collection.topics] == ["0101"]
     assert collection.qrels == {"0101": {"gakkai-j-0000000001": 3, "kaken-j-0851100100": 1}}
+
+
+def test_maps_collection_names_to_their_paths(tmp_path: Path) -> None:
+    assert collection_paths("ntcir1", tmp_path) == Ntcir1Paths(tmp_path / "NTCIR-1")
+    assert collection_paths("ntcir2", tmp_path) == Ntcir2Paths(
+        tmp_path / "NTCIR-1", tmp_path / "NTCIR-2"
+    )
+
+
+def test_rejects_an_unknown_collection_name(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="ntcir3"):
+        collection_paths("ntcir3", tmp_path)
