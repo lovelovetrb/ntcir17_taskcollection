@@ -33,10 +33,10 @@ def test_reads_the_topic_document_and_grade(archive_of: Callable[[str], Path]) -
 
 
 def test_converts_grades_to_numbers() -> None:
-    """A と B を適合、C を非適合として数える (ADR-0011)。"""
+    """S と A と B を適合、C を非適合として数える (ADR-0011, ADR-0026)。"""
     from hidden_subspace.corpus.judgements import GRADE_VALUES
 
-    assert GRADE_VALUES == {"A": 2, "B": 1, "C": 0}
+    assert GRADE_VALUES == {"S": 3, "A": 2, "B": 1, "C": 0}
 
 
 def test_reads_grades_from_the_second_column(archive_of: Callable[[str], Path]) -> None:
@@ -46,6 +46,15 @@ def test_reads_grades_from_the_second_column(archive_of: Callable[[str], Path]) 
     judgements = read_judgements(archive, (MEMBER,))
 
     assert [j.grade for j in judgements] == [2, 1, 0]
+
+
+def test_reads_the_highly_relevant_grade(archive_of: Callable[[str], Path]) -> None:
+    """NTCIR-2 の判定は A の上に S を持つ (ADR-0026)。"""
+    archive = archive_of("0101\tS\tgakkai-j-0000009857\t1\t\n")
+
+    judgements = read_judgements(archive, (MEMBER,))
+
+    assert [j.grade for j in judgements] == [3]
 
 
 def test_accepts_lines_with_a_trailing_comment(archive_of: Callable[[str], Path]) -> None:

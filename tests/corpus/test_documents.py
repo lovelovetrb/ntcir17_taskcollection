@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from hidden_subspace.corpus.documents import read_documents
+from hidden_subspace.corpus.documents import as_ntcir2_document_id, read_documents
 
 RECORD = """<REC>
 <ACCN>gakkai-0000000001</ACCN>
@@ -73,3 +73,40 @@ def test_rejects_a_record_without_an_abstract(archive_of: Callable[[str], Path])
 
     with pytest.raises(ValueError, match="ABST"):
         read_documents(archive_of(body), "mlir/ntc1-j1")
+
+
+KAKEN_RECORD = """<REC>
+<ACCN>kaken-j-0851100100</ACCN>
+<YEAR>1985</YEAR>
+<PJNM TYPE="kanji">高濃度近藤物質の系統的研究</PJNM>
+<ABST TYPE="kanji"><ABST.P>試料作製装置は本格的稼動状態に入った。</ABST.P></ABST>
+</REC>
+"""
+
+
+def test_reads_the_title_from_the_given_tag(archive_of: Callable[[str], Path]) -> None:
+    """kaken は TITL を持たず、研究課題名 PJNM を題名とする (ADR-0026)。"""
+    documents = read_documents(archive_of(KAKEN_RECORD), "mlir/ntc1-j1", title_tag="PJNM")
+
+    assert documents[0].document_id == "kaken-j-0851100100"
+    assert documents[0].title == "高濃度近藤物質の系統的研究"
+    assert documents[0].abstract == "試料作製装置は本格的稼動状態に入った。"
+
+
+def test_rejects_a_record_without_the_given_title_tag(archive_of: Callable[[str], Path]) -> None:
+    with pytest.raises(ValueError, match="PJNM"):
+        read_documents(archive_of(RECORD), "mlir/ntc1-j1", title_tag="PJNM")
+
+
+def test_converts_an_ntcir1_identifier_to_ntcir2() -> None:
+    """NTCIR-2 は NTCIR-1 の文書を gakkai-j- の ID で参照する (ADR-0026)。"""
+    assert as_ntcir2_document_id("gakkai-0000000001") == "gakkai-j-0000000001"
+
+
+@pytest.mark.parametrize(
+    "document_id",
+    ["gakkai-j-0000000001", "kaken-j-0851100100", "gakkai-000000001", "gakkai-00000000001"],
+)
+def test_rejects_an_identifier_not_in_the_ntcir1_form(document_id: str) -> None:
+    with pytest.raises(ValueError, match=document_id):
+        as_ntcir2_document_id(document_id)
