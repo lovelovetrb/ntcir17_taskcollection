@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from hidden_subspace.corpus.documents import read_documents
+from hidden_subspace.corpus.documents import as_ntcir2_document_id, read_documents
 
 RECORD = """<REC>
 <ACCN>gakkai-0000000001</ACCN>
@@ -96,3 +96,17 @@ def test_reads_the_title_from_the_given_tag(archive_of: Callable[[str], Path]) -
 def test_rejects_a_record_without_the_given_title_tag(archive_of: Callable[[str], Path]) -> None:
     with pytest.raises(ValueError, match="PJNM"):
         read_documents(archive_of(RECORD), "mlir/ntc1-j1", title_tag="PJNM")
+
+
+def test_converts_an_ntcir1_identifier_to_ntcir2() -> None:
+    """NTCIR-2 は NTCIR-1 の文書を gakkai-j- の ID で参照する (ADR-0026)。"""
+    assert as_ntcir2_document_id("gakkai-0000000001") == "gakkai-j-0000000001"
+
+
+@pytest.mark.parametrize(
+    "document_id",
+    ["gakkai-j-0000000001", "kaken-j-0851100100", "gakkai-000000001", "gakkai-00000000001"],
+)
+def test_rejects_an_identifier_not_in_the_ntcir1_form(document_id: str) -> None:
+    with pytest.raises(ValueError, match=document_id):
+        as_ntcir2_document_id(document_id)

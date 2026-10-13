@@ -12,6 +12,7 @@ from pathlib import Path
 from hidden_subspace.corpus.archive import read_members
 
 _INNER_TAG = re.compile(r"<[^>]+>")
+_NTCIR1_ID = re.compile(r"gakkai-(\d{10})")
 
 
 @dataclass(frozen=True)
@@ -52,6 +53,22 @@ def read_documents(archive: Path, member: str, *, title_tag: str = "TITL") -> li
             )
         )
     return documents
+
+
+def as_ntcir2_document_id(document_id: str) -> str:
+    """NTCIR-1 の文書 ID を、NTCIR-2 の qrels が参照する形に書き換える。
+
+    NTCIR-2 に同梱の ACCN-j.pl と同じく gakkai- を gakkai-j- にする (ADR-0026)。
+    ACCN-j.pl は形の合わない ID をそのまま通すが、`mlir/ntc1-j1` は全件がこの形を
+    持つため、合わなければ別の文書集合を読んでいるとみなして拒否する。
+    """
+    matched = _NTCIR1_ID.fullmatch(document_id)
+    if matched is None:
+        raise ValueError(
+            f"NTCIR-1 の文書 ID の形 (gakkai-<10 桁>) ではありません: {document_id}。"
+            "mlir/ntc1-j1 を読んでいるか確認してください。"
+        )
+    return f"gakkai-j-{matched.group(1)}"
 
 
 def _collapse(text: str) -> str:
