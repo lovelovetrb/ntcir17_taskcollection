@@ -73,3 +73,26 @@ def test_rejects_a_record_without_an_abstract(archive_of: Callable[[str], Path])
 
     with pytest.raises(ValueError, match="ABST"):
         read_documents(archive_of(body), "mlir/ntc1-j1")
+
+
+KAKEN_RECORD = """<REC>
+<ACCN>kaken-j-0851100100</ACCN>
+<YEAR>1985</YEAR>
+<PJNM TYPE="kanji">高濃度近藤物質の系統的研究</PJNM>
+<ABST TYPE="kanji"><ABST.P>試料作製装置は本格的稼動状態に入った。</ABST.P></ABST>
+</REC>
+"""
+
+
+def test_reads_the_title_from_the_given_tag(archive_of: Callable[[str], Path]) -> None:
+    """kaken は TITL を持たず、研究課題名 PJNM を題名とする (ADR-0026)。"""
+    documents = read_documents(archive_of(KAKEN_RECORD), "mlir/ntc1-j1", title_tag="PJNM")
+
+    assert documents[0].document_id == "kaken-j-0851100100"
+    assert documents[0].title == "高濃度近藤物質の系統的研究"
+    assert documents[0].abstract == "試料作製装置は本格的稼動状態に入った。"
+
+
+def test_rejects_a_record_without_the_given_title_tag(archive_of: Callable[[str], Path]) -> None:
+    with pytest.raises(ValueError, match="PJNM"):
+        read_documents(archive_of(RECORD), "mlir/ntc1-j1", title_tag="PJNM")
