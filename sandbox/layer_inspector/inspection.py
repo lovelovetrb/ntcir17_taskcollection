@@ -14,7 +14,7 @@ from typing import Any
 
 from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
-from hidden_subspace.collection import Ntcir1Paths, read_collection
+from hidden_subspace.collection import CollectionPaths, read_collection
 from hidden_subspace.encoding.cache import load_cache
 from hidden_subspace.evaluation import align_relevance
 from hidden_subspace.experiment.reader import read_topic_results
@@ -54,7 +54,7 @@ class Inspection:
 
 def build_inspection(
     settings: InspectionSettings,
-    collection_root: Path,
+    paths: CollectionPaths,
     cache_root: Path,
     results_root: Path,
     device: str,
@@ -73,7 +73,7 @@ def build_inspection(
         settings.topic_count,
     )
 
-    collection = read_collection(Ntcir1Paths(collection_root))
+    collection = read_collection(paths)
     documents = load_cache(cache_root / settings.model_id / "documents.pt").to(device)
     queries = load_cache(cache_root / settings.model_id / "queries.pt").to(device)
     rankings = rank_selected_layers(selection, documents, queries)

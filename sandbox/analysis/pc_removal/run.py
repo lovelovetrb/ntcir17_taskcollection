@@ -24,14 +24,14 @@ from analysis.pc_removal.records import (
     write_records,
 )
 from analysis.pc_removal.removal import estimate_common_components
-from hidden_subspace.collection import Ntcir1Paths, read_collection
+from hidden_subspace.collection import collection_paths, read_collection
 from hidden_subspace.encoding.cache import load_cache
 from hidden_subspace.evaluation import CUTOFFS, Relevance, align_relevance, evaluate
 from hidden_subspace.retrieval import rank_documents
 from hidden_subspace.states import HiddenStates
 from hidden_subspace.vectors import build_search_vectors
 
-CACHE_ROOT = Path("cache")
+CACHE_ROOT = Path("cache/ntcir1")
 OUTPUT_DIR = Path(__file__).parent / "output"
 MODELS = {"bert": "cl-tohoku/bert-base-japanese-v3"}
 REMOVED_COUNTS = (0, 1, 2, 3, 5, 10, 20, 50, 100, 200)
@@ -104,7 +104,7 @@ def evaluate_layer(
 
 def main() -> None:
     arguments = parse_arguments()
-    collection = read_collection(Ntcir1Paths(arguments.data / "NTCIR-1"))
+    collection = read_collection(collection_paths("ntcir1", arguments.data))
 
     for model, model_id in MODELS.items():
         documents = load_cache(CACHE_ROOT / model_id / "documents.pt")

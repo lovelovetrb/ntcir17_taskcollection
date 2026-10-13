@@ -21,7 +21,7 @@ from analysis.lexical_correlation.figures import (
 )
 from analysis.lexical_correlation.records import LayerScores, read_layer_scores, read_run_scores
 
-RESULTS_ROOT = Path("results")
+RESULTS_ROOT = Path("results/ntcir1")
 OUTPUT_DIR = Path(__file__).parent / "output"
 MODELS = {
     "bert": "cl-tohoku/bert-base-japanese-v3",

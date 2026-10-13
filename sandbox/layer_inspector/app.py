@@ -30,7 +30,7 @@ from layer_inspector.view import (
 RESULT_FILE = Path(
     os.environ.get(
         "LAYER_INSPECTOR_RESULT_FILE",
-        "results/cl-tohoku/bert-base-japanese-v3/layer-inspector/inspection.json",
+        "results/ntcir1/cl-tohoku/bert-base-japanese-v3/layer-inspector/inspection.json",
     )
 )
 DOCUMENT_HEIGHT = 640
