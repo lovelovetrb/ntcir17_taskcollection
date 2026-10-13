@@ -19,9 +19,30 @@ NTCIR-2 の J-J タスクの文書集合は配布物の readme (Fig.1) で次の
 | `ntc2-j1k` | 287,063 | NTCIR-2 `j-docs.tgz` | 科研費報告書 (kaken) |
 | 計 | 736,158 | | |
 
-`ntc1-j1.mod` は NTCIR-1 の文書全件に、NTCIR-2 に同梱の `ACCN-j.pl` をかけて作る。
-このスクリプトは ACCN の `gakkai-` を `gakkai-j-` に書き換えるだけで、他の行はそのまま
-出力する。NTCIR-1 の文書は 100% が NTCIR-2 の文書集合に含まれ、本文も同一である。
+`ntc1-j1.mod` は NTCIR-1 の文書全件に、NTCIR-2 に同梱の `ACCN-j.pl`
+(`scripts.tgz` の `scripts/ntc1accn/ACCN-j.pl`) をかけて作る。
+
+```perl
+#!/usr/bin/env perl
+$file = shift;
+unless ( -f $file) {
+    print STDERR "Add -j for gakkai in ACCN tag\n";
+    print STDERR "Usage: ACCN-j.pl <filename>\n";
+    print STDERR "Result file is: <filename>.mod\n";
+    exit 1
+}
+open(IN,$file) || die "cannot open ".$file." for read.\n";
+open(OUT,">".$file.".mod") || die "cannot open ".$file.".mod for write.\n";
+while (<IN>) {
+    s/^<ACCN>gakkai-(\d{10})<\/ACCN>/<ACCN>gakkai-j-\1<\/ACCN>/;
+    print OUT;
+}
+```
+
+行頭の `<ACCN>gakkai-<10 桁></ACCN>` を `<ACCN>gakkai-j-<10 桁></ACCN>` に書き換え、他の行は
+そのまま出力する。`.mod` は元と同じ EUC-JP のタグ付きテキストで、ACCN の値だけが異なる。
+`mlir/ntc1-j1` で置換の対象になる行は 332,918 行で、全文書の ID が変換される。NTCIR-1 の
+文書は 100% が NTCIR-2 の文書集合に含まれ、本文も同一である。
 
 NTCIR-1 と形式が異なる点は 3 つある。
 
