@@ -1,10 +1,14 @@
 """層ごとに文書集合の上位主成分を除いて検索し、トピック別の指標と分散占有率を記録する (issue #47)。
 
 層ごとに、生 (中心化も除去もしない) と、文書の平均を引いて上位 k 本の主成分を除いた
-条件を評価する。k = 0 は中心化だけをした条件。主成分は全文書から推定し、クエリにも
+条件を評価する。k = 0 は中心化だけをした条件。平均と主成分は全文書から推定し、クエリにも
 同じ平均と主成分を当てる。順位付けと評価は本体の実験と同じ関数を使う。
 
-キャッシュは `cache/<collection>/` から読み、記録は `output/<collection>/` に書く。
+`--estimate-from unique` では、NTCIR-2 の文書のうち NTCIR-1 に含まれないものだけから平均と
+主成分を推定する。除く処理と評価は全文書に当てる。
+
+キャッシュは `cache/<collection>/` から読み、記録は `output/<collection>/` (unique では
+`output/<collection>/unique/`) に書く。
 
     CUDA_VISIBLE_DEVICES=<番号> PYTHONPATH=sandbox uv run python -m analysis.pc_removal.run \
         --collection ntcir1
@@ -18,6 +22,7 @@ from dataclasses import replace
 from pathlib import Path
 
 import torch
+from torch import Tensor
 
 from analysis.pc_removal.records import (
     RAW,
@@ -28,6 +33,7 @@ from analysis.pc_removal.records import (
 )
 from analysis.pc_removal.removal import estimate_common_components
 from hidden_subspace.collection import COLLECTION_NAMES, collection_paths, read_collection
+from hidden_subspace.corpus.documents import as_ntcir2_document_id
 from hidden_subspace.encoding.cache import load_cache
 from hidden_subspace.evaluation import CUTOFFS, Relevance, align_relevance, evaluate
 from hidden_subspace.retrieval import rank_documents
@@ -38,11 +44,18 @@ CACHE_ROOT = Path("cache")
 OUTPUT_DIR = Path(__file__).parent / "output"
 MODELS = {"bert": "cl-tohoku/bert-base-japanese-v3"}
 REMOVED_COUNTS = (0, 1, 2, 3, 5, 10, 20, 50, 100, 200)
+ESTIMATION_SOURCES = ("all", "unique")
 
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--collection", required=True, choices=COLLECTION_NAMES)
+    parser.add_argument(
+        "--estimate-from",
+        default="all",
+        choices=ESTIMATION_SOURCES,
+        help="平均と主成分を推定する文書。unique は NTCIR-2 にだけある文書",
+    )
     parser.add_argument(
         "--data",
         type=Path,
@@ -50,7 +63,22 @@ def parse_arguments() -> argparse.Namespace:
         help="NTCIR の配布物を置いたディレクトリ",
     )
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
-    return parser.parse_args()
+    arguments = parser.parse_args()
+    if arguments.estimate_from == "unique" and arguments.collection != "ntcir2":
+        parser.error("--estimate-from unique は --collection ntcir2 と組み合わせてください。")
+    return arguments
+
+
+def output_directory(collection: str, estimate_from: str) -> Path:
+    directory = OUTPUT_DIR / collection
+    return directory if estimate_from == "all" else directory / estimate_from
+
+
+def unique_document_mask(documents: HiddenStates, data: Path) -> Tensor:
+    """NTCIR-2 の文書のうち、NTCIR-1 に含まれないものを True にする。"""
+    ntcir1 = read_collection(collection_paths("ntcir1", data))
+    ntcir1_ids = {as_ntcir2_document_id(document.document_id) for document in ntcir1.documents}
+    return torch.tensor([item_id not in ntcir1_ids for item_id in documents.item_ids])
 
 
 def evaluate_layer(
@@ -58,10 +86,12 @@ def evaluate_layer(
     documents: HiddenStates,
     queries: HiddenStates,
     relevance: Relevance,
+    estimation_mask: Tensor,
 ) -> tuple[list[TopicRecord], list[VarianceRecord]]:
     """1 層ぶんの全条件を評価し、除いた主成分の分散占有率も返す。
 
-    `documents` と `queries` はその層だけに絞ってある。
+    `documents` と `queries` はその層だけに絞ってある。平均と主成分は `estimation_mask` が
+    True の文書だけから推定する。
     """
     (layer,) = documents.layer_indices
 
@@ -85,7 +115,9 @@ def evaluate_layer(
         ]
 
     records = records_of(RAW, documents, queries)
-    components = estimate_common_components(documents.values[:, 0, :], max(REMOVED_COUNTS))
+    components = estimate_common_components(
+        documents.values[estimation_mask, 0, :], max(REMOVED_COUNTS)
+    )
     variances = [
         VarianceRecord(
             model_id=model_id,
@@ -110,7 +142,7 @@ def main() -> None:
     arguments = parse_arguments()
     collection = read_collection(collection_paths(arguments.collection, arguments.data))
     cache_dir = CACHE_ROOT / arguments.collection
-    output_dir = OUTPUT_DIR / arguments.collection
+    output_dir = output_directory(arguments.collection, arguments.estimate_from)
 
     for model, model_id in MODELS.items():
         documents = load_cache(cache_dir / model_id / "documents.pt")
@@ -118,6 +150,12 @@ def main() -> None:
         relevance = align_relevance(collection.qrels, queries.item_ids, documents.item_ids).to(
             arguments.device
         )
+        if arguments.estimate_from == "unique":
+            estimation_mask = unique_document_mask(documents, arguments.data)
+        else:
+            estimation_mask = torch.ones(len(documents.item_ids), dtype=torch.bool)
+        estimation_mask = estimation_mask.to(arguments.device)
+        print(f"推定に使う文書 {int(estimation_mask.sum()):,} / {len(documents.item_ids):,}")
 
         records: list[TopicRecord] = []
         variances: list[VarianceRecord] = []
@@ -128,6 +166,7 @@ def main() -> None:
                 documents.select_layers([layer]).to(arguments.device),
                 queries.select_layers([layer]).to(arguments.device),
                 relevance,
+                estimation_mask,
             )
             records += layer_records
             variances += layer_variances

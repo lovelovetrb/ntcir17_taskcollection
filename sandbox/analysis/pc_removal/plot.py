@@ -3,7 +3,8 @@
 全トピック平均の変化を層ごとの折れ線に、トピックごとの変化を層ごとのヒートマップに
 描く。ヒートマップは、生を基準にしたものと、中心化だけをした k=0 を基準にしたものの
 2 枚を描く。除いた主成分の累積の分散占有率も、平均の変化と同じ並びの折れ線にする。記録は
-`output/<collection>/` から読み、図も同じ場所に置く。GPU は使わない。
+`output/<collection>/` (unique では `output/<collection>/unique/`) から読み、図も同じ場所に
+置く。GPU は使わない。
 
     PYTHONPATH=sandbox uv run python -m analysis.pc_removal.plot --collection ntcir1
 """
@@ -29,7 +30,12 @@ from analysis.pc_removal.records import (
     read_variance_records,
     removal_condition,
 )
-from analysis.pc_removal.run import MODELS, OUTPUT_DIR, REMOVED_COUNTS
+from analysis.pc_removal.run import (
+    ESTIMATION_SOURCES,
+    MODELS,
+    REMOVED_COUNTS,
+    output_directory,
+)
 from hidden_subspace.collection import COLLECTION_NAMES
 
 METRIC = "nDCG@1000"
@@ -83,7 +89,9 @@ def cumulative_shares(records: list[VarianceRecord], *, model: str) -> Cumulativ
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--collection", required=True, choices=COLLECTION_NAMES)
-    output_dir = OUTPUT_DIR / parser.parse_args().collection
+    parser.add_argument("--estimate-from", default="all", choices=ESTIMATION_SOURCES)
+    arguments = parser.parse_args()
+    output_dir = output_directory(arguments.collection, arguments.estimate_from)
 
     for model in MODELS:
         records = read_records(output_dir / f"metrics-{model}.jsonl")
