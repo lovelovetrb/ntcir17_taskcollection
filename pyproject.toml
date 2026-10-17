@@ -5,11 +5,15 @@ description = "NTCIR-1/2 を用いた検索ベクトルの層・次元レベル�
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "accelerate>=1.15.0",
+    "datasets>=5.1.0",
     "fugashi>=1.5.2",
     "numpy>=2.5.2",
+    "pyyaml>=6.0.3",
     "torch>=2.13.0",
     "transformers>=5.16.1",
     "unidic-lite>=1.0.8",
+    "wandb>=0.31.0",
 ]
 
 [build-system]
