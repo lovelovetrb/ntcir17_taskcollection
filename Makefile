@@ -47,11 +47,11 @@ bm25-build:  ## BM25 ベースライン用のイメージをビルド (ADR-0022)
 
 bm25:        ## 組織者のノートブックを実行して BM25 の run ファイルを作る (FORCE=1 で作り直す)
 	# マウント先を先に作る。無いと Docker が root 所有で作ってしまい、コンテナ内のユーザーが書けない
-	mkdir -p cache/bm25/testcollections cache/bm25/indexes cache/bm25/ir_datasets results/bm25
+	mkdir -p cache/bm25/testcollections cache/bm25/indexes cache/bm25/ir_datasets results/ntcir1/bm25
 	BM25_UID=$$(id -u) BM25_GID=$$(id -g) docker compose run --rm bm25
 
 bm25-tf:     ## TF ÷ トークン数 の run を BM25 と同じインデックスから作る (ADR-0025)
-	mkdir -p cache/bm25/testcollections cache/bm25/indexes cache/bm25/ir_datasets results/bm25 results/tf-per-token
+	mkdir -p cache/bm25/testcollections cache/bm25/indexes cache/bm25/ir_datasets results/ntcir1/bm25 results/ntcir1/tf-per-token
 	BM25_UID=$$(id -u) BM25_GID=$$(id -g) docker compose run --rm bm25 python /work/tf_run.py
 
 bm25-evaluate:  ## BM25 の run を層と同じ定義で評価して記録を書く (ADR-0023)

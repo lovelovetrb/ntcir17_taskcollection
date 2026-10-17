@@ -27,7 +27,7 @@ from analysis.word_sense.retrieval import (
     rank_layers,
     top_documents,
 )
-from hidden_subspace.collection import Ntcir1Paths, read_collection
+from hidden_subspace.collection import collection_paths, read_collection
 from hidden_subspace.corpus.text import document_text
 from hidden_subspace.corpus.topics import Topic
 from hidden_subspace.encoding.cache import load_cache
@@ -52,8 +52,8 @@ def parse_arguments() -> argparse.Namespace:
         type=Path,
         default=Path(os.environ.get("NTCIR_DATA_DIR", "~/dev/dataset/ntcir17")).expanduser(),
     )
-    parser.add_argument("--cache", type=Path, default=Path("cache"))
-    parser.add_argument("--results", type=Path, default=Path("results"))
+    parser.add_argument("--cache", type=Path, default=Path("cache/ntcir1"))
+    parser.add_argument("--results", type=Path, default=Path("results/ntcir1"))
     parser.add_argument("--out", type=Path, default=Path("sandbox/results/word_sense"))
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     return parser.parse_args()
@@ -104,7 +104,7 @@ def main() -> int:
         )
     model_id = MODELS[arguments.model]
 
-    collection = read_collection(Ntcir1Paths(arguments.data / "NTCIR-1"))
+    collection = read_collection(collection_paths("ntcir1", arguments.data))
     topics = {topic.topic_id: topic for topic in collection.topics}
     texts = {document.document_id: document_text(document) for document in collection.documents}
     layers = best_layers(read_topic_results(arguments.results, model_id, "layer-sweep"))

@@ -13,6 +13,7 @@ from pathlib import Path
 
 import torch
 
+from hidden_subspace.collection import collection_paths
 from layer_inspector.inspection import (
     InspectionSettings,
     build_inspection,
@@ -29,11 +30,11 @@ SETTINGS = InspectionSettings(
     top_count=10,
     relevant_count=5,
 )
-COLLECTION_ROOT = (
-    Path(os.environ.get("NTCIR_DATA_DIR", "~/dev/dataset/ntcir17")).expanduser() / "NTCIR-1"
+COLLECTION = collection_paths(
+    "ntcir1", Path(os.environ.get("NTCIR_DATA_DIR", "~/dev/dataset/ntcir17")).expanduser()
 )
-CACHE_ROOT = Path("cache")
-RESULTS_ROOT = Path("results")
+CACHE_ROOT = Path("cache/ntcir1")
+RESULTS_ROOT = Path("results/ntcir1")
 RESULT_FILE = RESULTS_ROOT / SETTINGS.model_id / "layer-inspector" / "inspection.json"
 
 
@@ -44,7 +45,7 @@ def main() -> None:
     load_or_build_inspection(
         RESULT_FILE,
         SETTINGS,
-        lambda: build_inspection(SETTINGS, COLLECTION_ROOT, CACHE_ROOT, RESULTS_ROOT, device),
+        lambda: build_inspection(SETTINGS, COLLECTION, CACHE_ROOT, RESULTS_ROOT, device),
     )
     print(f"結果ファイル: {RESULT_FILE}")
 

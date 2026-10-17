@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """run ファイルを層の実験と同じ定義で評価し、記録を run の隣に書き出す (ADR-0023, ADR-0025)。
 
-run は `results/<model_id>/<experiment>/` に置く。BM25 の run は組織者のノートブックで
-(ADR-0022, `make bm25`)、TF ÷ トークン数 の run は `make bm25-tf` で作る。ここでは run を
-読んで `evaluate` に通すだけで、コンテナも GPU も要らない。
+run は `results/<collection>/<model_id>/<experiment>/` に置く (ADR-0026)。BM25 の run は
+組織者のノートブックで (ADR-0022, `make bm25`)、TF ÷ トークン数 の run は `make bm25-tf` で
+作る。ここでは run を読んで `evaluate` に通すだけで、コンテナも GPU も要らない。
 
 使い方:
     python evaluate_run.py
-    python evaluate_run.py --run results/tf-per-token/ntcir17-transfer/train/run.res.gz
+    python evaluate_run.py --run results/ntcir1/tf-per-token/ntcir17-transfer/train/run.res.gz
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ import argparse
 import os
 from pathlib import Path
 
-from hidden_subspace.collection import Ntcir1Paths, read_collection
+from hidden_subspace.collection import COLLECTION_NAMES, collection_paths, read_collection
 from hidden_subspace.evaluation import CUTOFFS, align_relevance, evaluate
 from hidden_subspace.experiment.results import (
     Configuration,
@@ -36,8 +36,8 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--run",
         type=Path,
-        default=Path("results/bm25/ntcir17-transfer/train/MyRun-BM25.res.gz"),
-        help="評価する run ファイル。results/<model_id>/<experiment>/ の下に置く",
+        default=Path("results/ntcir1/bm25/ntcir17-transfer/train/MyRun-BM25.res.gz"),
+        help="評価する run ファイル。results/<collection>/<model_id>/<experiment>/ の下に置く",
     )
     parser.add_argument(
         "--data",
@@ -48,34 +48,43 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def locate(run_path: Path, results_root: Path) -> tuple[str, str]:
-    """run の置き場所から model_id と experiment を導く。記録は run の隣に書かれる。
+def locate(run_path: Path, results_root: Path) -> tuple[str, str, str]:
+    """run の置き場所から collection と model_id と experiment を導く。記録は run の隣に書かれる。
 
-    `results/<model_id>/<experiment>/<run>` の先頭のディレクトリが model_id、run のある
-    ディレクトリまでの残りが experiment。
+    `results/<collection>/<model_id>/<experiment>/<run>` の先頭のディレクトリが collection、
+    次が model_id、run のあるディレクトリまでの残りが experiment。
     """
     try:
         relative = run_path.parent.relative_to(results_root)
     except ValueError:
         raise SystemExit(
             f"run が {results_root}/ の下にありません: {run_path}\n"
-            f"run を {results_root}/<model_id>/<experiment>/ に置くか、"
+            f"run を {results_root}/<collection>/<model_id>/<experiment>/ に置くか、"
             "--results で置き場所を指定してください。"
         ) from None
-    if len(relative.parts) < 2:
+    if len(relative.parts) < 3:
         raise SystemExit(
-            f"run の置き場所から model_id と experiment を導けません: {run_path}\n"
-            f"{results_root}/<model_id>/<experiment>/ の下に置いてください。"
+            f"run の置き場所から collection と model_id と experiment を導けません: {run_path}\n"
+            f"{results_root}/<collection>/<model_id>/<experiment>/ の下に置いてください。"
         )
-    return relative.parts[0], Path(*relative.parts[1:]).as_posix()
+    collection = relative.parts[0]
+    if collection not in COLLECTION_NAMES:
+        raise SystemExit(
+            f"run の置き場所の {collection} はコレクションの名前ではありません: {run_path}\n"
+            f"{results_root}/{{{','.join(COLLECTION_NAMES)}}}/ の下に置いてください。"
+        )
+    return collection, relative.parts[1], Path(*relative.parts[2:]).as_posix()
 
 
 def main() -> int:
     arguments = parse_arguments()
-    model_id, experiment = locate(arguments.run, arguments.results)
-    print(f"run {arguments.run} / model_id {model_id} / experiment {experiment}")
+    collection_name, model_id, experiment = locate(arguments.run, arguments.results)
+    print(
+        f"run {arguments.run} / collection {collection_name} / model_id {model_id} / "
+        f"experiment {experiment}"
+    )
 
-    collection = read_collection(Ntcir1Paths(arguments.data / "NTCIR-1"))
+    collection = read_collection(collection_paths(collection_name, arguments.data))
     topic_ids = [topic.topic_id for topic in collection.topics]
     document_ids = [document.document_id for document in collection.documents]
     print(f"文書 {len(document_ids):,} / トピック {len(topic_ids)}")
@@ -97,7 +106,9 @@ def main() -> int:
         normalize_layers=False,
     )
     summary, per_topic = results_of_evaluation(experiment, configuration, evaluation)
-    written = write_results(arguments.results, ExperimentResults([summary], per_topic))
+    written = write_results(
+        arguments.results / collection_name, ExperimentResults([summary], per_topic)
+    )
 
     print(f"\n書き出し {written}")
     for name in REPORTED:

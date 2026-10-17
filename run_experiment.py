@@ -4,9 +4,13 @@
 エンコード済みのキャッシュがなければ作る。全 332,918 件のエンコードには 20 分
 以上かかるが、2 回目以降は保存したものを読む。
 
+キャッシュは `cache/<collection>/<model_id>/`、記録は
+`results/<collection>/<model_id>/<experiment>/` に置く (ADR-0026)。
+
 使い方:
-    python run_experiment.py --experiment layer-sweep
-    python run_experiment.py --experiment layer-sweep --model cl-nagoya/unsup-simcse-ja-base
+    python run_experiment.py --collection ntcir1 --experiment layer-sweep
+    python run_experiment.py --collection ntcir2 --experiment layer-sweep \
+        --model cl-nagoya/unsup-simcse-ja-base
 """
 
 from __future__ import annotations
@@ -20,7 +24,12 @@ from pathlib import Path
 
 import torch
 
-from hidden_subspace.collection import Collection, Ntcir1Paths, read_collection
+from hidden_subspace.collection import (
+    COLLECTION_NAMES,
+    Collection,
+    collection_paths,
+    read_collection,
+)
 from hidden_subspace.corpus.text import document_text, query_text
 from hidden_subspace.encoding.cache import encode_or_load
 from hidden_subspace.encoding.encoder import Encoder
@@ -42,6 +51,7 @@ TOP_REPORTED = 20
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--collection", required=True, choices=COLLECTION_NAMES)
     parser.add_argument("--experiment", required=True, choices=plan_names())
     parser.add_argument("--model", default=DEFAULT_MODEL, help="HuggingFace のモデル識別子")
     parser.add_argument(
@@ -143,16 +153,19 @@ def report(results: Sequence[ConfigurationResult]) -> None:
 
 def main() -> int:
     arguments = parse_arguments()
-    print(f"実験 {arguments.experiment} / モデル {arguments.model}")
+    print(
+        f"コレクション {arguments.collection} / 実験 {arguments.experiment} / "
+        f"モデル {arguments.model}"
+    )
 
-    collection = read_collection(Ntcir1Paths(arguments.data / "NTCIR-1"))
+    collection = read_collection(collection_paths(arguments.collection, arguments.data))
     print(
         f"文書 {len(collection.documents):,} / トピック {len(collection.topics)} / "
         f"判定 {sum(len(v) for v in collection.qrels.values()):,}"
     )
 
     documents, queries, relevance = prepare(
-        collection, arguments.model, arguments.cache, arguments.device
+        collection, arguments.model, arguments.cache / arguments.collection, arguments.device
     )
 
     plans = build_plans(arguments.experiment, documents.layer_indices, documents.dimension_indices)
@@ -169,7 +182,7 @@ def main() -> int:
     )
     print(f"  {time.perf_counter() - started:.1f} 秒")
 
-    print(f"\n書き出し {write_results(arguments.results, results)}")
+    print(f"\n書き出し {write_results(arguments.results / arguments.collection, results)}")
     report(results.configurations)
     return 0
 

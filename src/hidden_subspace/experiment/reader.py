@@ -26,8 +26,8 @@ def read_topic_results(root: Path, model_id: str, experiment: str) -> list[Topic
     if not directory.is_dir():
         raise FileNotFoundError(
             f"{experiment} の記録がありません: {directory}\n"
-            f"先に python run_experiment.py --experiment {experiment} --model {model_id} "
-            "を実行してください。"
+            f"先に python run_experiment.py --collection {root.name} --experiment {experiment} "
+            f"--model {model_id} を実行してください。"
         )
 
     results = [
