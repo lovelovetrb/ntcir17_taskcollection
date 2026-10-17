@@ -1,6 +1,6 @@
 """層・条件・トピックごとの指標と、層ごとの分散占有率を JSON Lines で書き、読み戻す。
 
-記録は output/ に置くが、拡張子が .jsonl なのでコミットされない (ADR-0024)。
+記録は output/<collection>/ に置くが、拡張子が .jsonl なのでコミットされない (ADR-0024)。
 run.py を回せば作り直せる。
 """
 
@@ -57,6 +57,7 @@ def _read_rows(path: Path) -> list[dict]:
     if not path.is_file():
         raise FileNotFoundError(
             f"記録がありません: {path}\n"
-            "先に PYTHONPATH=sandbox uv run python -m analysis.pc_removal.run を実行してください。"
+            "先に PYTHONPATH=sandbox uv run python -m analysis.pc_removal.run "
+            "--collection <コレクション> を実行してください。"
         )
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]

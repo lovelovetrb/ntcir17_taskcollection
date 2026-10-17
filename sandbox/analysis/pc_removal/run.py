@@ -4,7 +4,10 @@
 条件を評価する。k = 0 は中心化だけをした条件。主成分は全文書から推定し、クエリにも
 同じ平均と主成分を当てる。順位付けと評価は本体の実験と同じ関数を使う。
 
-    CUDA_VISIBLE_DEVICES=<番号> PYTHONPATH=sandbox uv run python -m analysis.pc_removal.run
+キャッシュは `cache/<collection>/` から読み、記録は `output/<collection>/` に書く。
+
+    CUDA_VISIBLE_DEVICES=<番号> PYTHONPATH=sandbox uv run python -m analysis.pc_removal.run \
+        --collection ntcir1
 """
 
 from __future__ import annotations
@@ -24,14 +27,14 @@ from analysis.pc_removal.records import (
     write_records,
 )
 from analysis.pc_removal.removal import estimate_common_components
-from hidden_subspace.collection import collection_paths, read_collection
+from hidden_subspace.collection import COLLECTION_NAMES, collection_paths, read_collection
 from hidden_subspace.encoding.cache import load_cache
 from hidden_subspace.evaluation import CUTOFFS, Relevance, align_relevance, evaluate
 from hidden_subspace.retrieval import rank_documents
 from hidden_subspace.states import HiddenStates
 from hidden_subspace.vectors import build_search_vectors
 
-CACHE_ROOT = Path("cache/ntcir1")
+CACHE_ROOT = Path("cache")
 OUTPUT_DIR = Path(__file__).parent / "output"
 MODELS = {"bert": "cl-tohoku/bert-base-japanese-v3"}
 REMOVED_COUNTS = (0, 1, 2, 3, 5, 10, 20, 50, 100, 200)
@@ -39,6 +42,7 @@ REMOVED_COUNTS = (0, 1, 2, 3, 5, 10, 20, 50, 100, 200)
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--collection", required=True, choices=COLLECTION_NAMES)
     parser.add_argument(
         "--data",
         type=Path,
@@ -104,11 +108,13 @@ def evaluate_layer(
 
 def main() -> None:
     arguments = parse_arguments()
-    collection = read_collection(collection_paths("ntcir1", arguments.data))
+    collection = read_collection(collection_paths(arguments.collection, arguments.data))
+    cache_dir = CACHE_ROOT / arguments.collection
+    output_dir = OUTPUT_DIR / arguments.collection
 
     for model, model_id in MODELS.items():
-        documents = load_cache(CACHE_ROOT / model_id / "documents.pt")
-        queries = load_cache(CACHE_ROOT / model_id / "queries.pt")
+        documents = load_cache(cache_dir / model_id / "documents.pt")
+        queries = load_cache(cache_dir / model_id / "queries.pt")
         relevance = align_relevance(collection.qrels, queries.item_ids, documents.item_ids).to(
             arguments.device
         )
@@ -125,8 +131,8 @@ def main() -> None:
             )
             records += layer_records
             variances += layer_variances
-        write_records(records, OUTPUT_DIR / f"metrics-{model}.jsonl")
-        write_records(variances, OUTPUT_DIR / f"variance-{model}.jsonl")
+        write_records(records, output_dir / f"metrics-{model}.jsonl")
+        write_records(variances, output_dir / f"variance-{model}.jsonl")
 
 
 if __name__ == "__main__":
