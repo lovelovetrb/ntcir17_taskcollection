@@ -17,7 +17,11 @@ NTCIR-1 の文書に寄せ、寄せる前と後で除去の効果を比べる。
 ### 学習
 
 `cl-tohoku/bert-base-japanese-v3` に、NTCIR-1 の文書だけを使って MLM の追加事前学習
-(DAPT) を行う。クエリと qrels は使わない。`cl-nagoya/unsup-simcse-ja-base` は対象にしない。
+(DAPT) を行う。クエリと qrels は使わない。まず tohoku-bert で結果を見て、ほかのモデル
+(`cl-nagoya/unsup-simcse-ja-base` など) で同じ検証をするかはその後に決める。
+
+学習のコードは tohoku-bert に限らず、MLM の head を付けて読み込める Transformer の
+エンコーダーなら学習できるように作る。学習するモデルは yaml で指定する。
 
 - 文書テキストは検索と同じ `document_text` (TITL + ABST、ADR-0011) で作る
 - 512 トークンで切る (ADR-0004)
@@ -85,7 +89,7 @@ cache/dapt/<model_id>/
 
 | 置き場所 | 中身 |
 |---|---|
-| yaml (`src/hidden_subspace/dapt/` の中) | 変える頻度が高いもの: エポック数、バッチサイズ、学習率、warmup の割合 |
+| yaml (`src/hidden_subspace/dapt/` の中) | 変える頻度が高いもの: 学習するモデル、エポック数、バッチサイズ、学習率、warmup の割合 |
 | コードの固定値 | 変えると `data/` を作り直す必要があるもの: シード、検証の割合、隠す確率、系列長 |
 
 コードの固定値を変えるときは `data/` を消してから作り直す。
@@ -190,6 +194,6 @@ Precision と Recall は使わない。分類先が語彙の全部 (32,768 種�
 
 ## 結果
 
-- DAPT は tohoku-bert だけで行う
+- DAPT はまず tohoku-bert で行う。ほかのモデルは yaml でモデルを変えれば同じコードで学習できる
 - 主成分の向きの比較 (DAPT の前後、NTCIR-1 と NTCIR-2) は、DAPT 後に除去を適用した
   結果が出てから決める
