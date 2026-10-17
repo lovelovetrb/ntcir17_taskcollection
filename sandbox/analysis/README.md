@@ -22,11 +22,11 @@ PYTHONPATH=sandbox uv run python -m analysis.lexical_correlation
 CUDA_VISIBLE_DEVICES=<DEVICE_ID> PYTHONPATH=sandbox uv run --env-file .env python -m analysis.word_sense.collect_judgements --model bert
 ```
 
-`pc_removal/` は記録ではなくキャッシュ (`cache/<collection>/`) を読み、実験 (GPU を使う) と描画を分けて回す。NTCIR-1 と NTCIR-2 を `--collection` で選び、記録と図は `output/<collection>/` に置く。`--estimate-from unique` では NTCIR-2 にだけある文書から平均と主成分を推定し、`output/ntcir2/unique/` に置く。記録 `metrics-<model>.jsonl` と `variance-<model>.jsonl` はコミットしない。
+`pc_removal/` は記録ではなくキャッシュ (`cache/<collection>/`) を読み、実験 (GPU を使う) と描画を分けて回す。NTCIR-1 と NTCIR-2 を `--collection` で選び、記録と図は `output/<collection>/` に置く。`--collection ntcir2-unique` では NTCIR-2 にだけある文書から平均と主成分を推定し、`output/ntcir2-unique/` に置く。記録 `metrics-<model>.jsonl` と `variance-<model>.jsonl` はコミットしない。
 
 ```
 CUDA_VISIBLE_DEVICES=<番号> PYTHONPATH=sandbox uv run python -m analysis.pc_removal.run --collection ntcir2
 PYTHONPATH=sandbox uv run python -m analysis.pc_removal.plot --collection ntcir2
-CUDA_VISIBLE_DEVICES=<番号> PYTHONPATH=sandbox uv run python -m analysis.pc_removal.run --collection ntcir2 --estimate-from unique
-PYTHONPATH=sandbox uv run python -m analysis.pc_removal.plot --collection ntcir2 --estimate-from unique
+CUDA_VISIBLE_DEVICES=<番号> PYTHONPATH=sandbox uv run python -m analysis.pc_removal.run --collection ntcir2-unique
+PYTHONPATH=sandbox uv run python -m analysis.pc_removal.plot --collection ntcir2-unique
 ```
