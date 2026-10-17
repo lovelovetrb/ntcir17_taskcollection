@@ -2,13 +2,15 @@
 
 全トピック平均の変化を層ごとの折れ線に、トピックごとの変化を層ごとのヒートマップに
 描く。ヒートマップは、生を基準にしたものと、中心化だけをした k=0 を基準にしたものの
-2 枚を描く。除いた主成分の累積の分散占有率も、平均の変化と同じ並びの折れ線にする。図は
-output/ に置く。GPU は使わない。
+2 枚を描く。除いた主成分の累積の分散占有率も、平均の変化と同じ並びの折れ線にする。記録は
+`output/<collection>/` から読み、図も同じ場所に置く。GPU は使わない。
 
-    PYTHONPATH=sandbox uv run python -m analysis.pc_removal.plot
+    PYTHONPATH=sandbox uv run python -m analysis.pc_removal.plot --collection ntcir1
 """
 
 from __future__ import annotations
+
+import argparse
 
 import numpy as np
 
@@ -28,6 +30,7 @@ from analysis.pc_removal.records import (
     removal_condition,
 )
 from analysis.pc_removal.run import MODELS, OUTPUT_DIR, REMOVED_COUNTS
+from hidden_subspace.collection import COLLECTION_NAMES
 
 METRIC = "nDCG@1000"
 
@@ -78,20 +81,24 @@ def cumulative_shares(records: list[VarianceRecord], *, model: str) -> Cumulativ
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--collection", required=True, choices=COLLECTION_NAMES)
+    output_dir = OUTPUT_DIR / parser.parse_args().collection
+
     for model in MODELS:
-        records = read_records(OUTPUT_DIR / f"metrics-{model}.jsonl")
+        records = read_records(output_dir / f"metrics-{model}.jsonl")
         deltas = removal_deltas(records, model=model, baseline=RAW, counts=REMOVED_COUNTS)
-        save_mean_delta_grid(deltas, path=OUTPUT_DIR / f"mean-delta-{model}.png")
-        save_topic_delta_heatmaps(deltas, path=OUTPUT_DIR / f"topic-delta-{model}.png")
+        save_mean_delta_grid(deltas, path=output_dir / f"mean-delta-{model}.png")
+        save_topic_delta_heatmaps(deltas, path=output_dir / f"topic-delta-{model}.png")
         # k=0 を基準にすると、中心化の効果を除いた、主成分を除くこと自体の効果になる
         centered = removal_deltas(
             records, model=model, baseline=removal_condition(0), counts=REMOVED_COUNTS[1:]
         )
-        save_topic_delta_heatmaps(centered, path=OUTPUT_DIR / f"topic-delta-centered-{model}.png")
+        save_topic_delta_heatmaps(centered, path=output_dir / f"topic-delta-centered-{model}.png")
         shares = cumulative_shares(
-            read_variance_records(OUTPUT_DIR / f"variance-{model}.jsonl"), model=model
+            read_variance_records(output_dir / f"variance-{model}.jsonl"), model=model
         )
-        save_cumulative_share_grid(shares, path=OUTPUT_DIR / f"variance-{model}.png")
+        save_cumulative_share_grid(shares, path=output_dir / f"variance-{model}.png")
 
 
 if __name__ == "__main__":
