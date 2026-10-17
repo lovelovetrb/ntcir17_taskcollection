@@ -1,5 +1,7 @@
 # NTCIR テストコレクション (利用許諾の対象。絶対にコミットしない)
 ntcir1/
+# 分析の図の置き場で、配布物ではない
+!sandbox/analysis/pc_removal/output/ntcir1/
 ntcir2/
 # 分析の図の置き場で、配布物ではない
 !sandbox/analysis/pc_removal/output/ntcir2/
