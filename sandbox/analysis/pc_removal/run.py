@@ -41,7 +41,7 @@ from hidden_subspace.vectors import build_search_vectors
 
 CACHE_ROOT = Path("cache")
 OUTPUT_DIR = Path(__file__).parent / "output"
-MODELS = {"bert": "cl-tohoku/bert-base-japanese-v3"}
+MODELS = {"bert": "cl-tohoku/bert-base-japanese-v3", "simcse": "cl-nagoya/unsup-simcse-ja-base"}
 REMOVED_COUNTS = (0, 1, 2, 3, 5, 10, 20, 50, 100, 200)
 COLLECTIONS = {"ntcir1": "ntcir1", "ntcir2": "ntcir2", "ntcir2-unique": "ntcir2"}
 """`--collection` の値と、キャッシュと配布物を読むコレクション。"""
