@@ -15,7 +15,7 @@ from pathlib import Path
 from datasets import Dataset, load_from_disk
 from transformers import PreTrainedTokenizerBase
 
-from hidden_subspace.collection import Ntcir2Paths, collection_paths, read_collection
+from hidden_subspace.collection import Ntcir1Paths, Ntcir2Paths, collection_paths
 from hidden_subspace.corpus.documents import Document, read_documents
 from hidden_subspace.corpus.text import document_text
 from hidden_subspace.dapt.masking import fix_masks
@@ -51,7 +51,7 @@ def prepare_data(data_root: Path, model_id: str, tokenizer: PreTrainedTokenizerB
 
     @cache
     def split() -> tuple[list[Document], list[Document]]:
-        return split_validation(read_collection(collection_paths("ntcir1", data_root)).documents)
+        return split_validation(_ntcir1_documents(data_root))
 
     training = load_or_build(directory / "train", lambda: tokenize(_texts(split()[0]), tokenizer))
     validation = load_or_build(directory / "val", lambda: fix_masks(_texts(split()[1]), tokenizer))
@@ -60,6 +60,12 @@ def prepare_data(data_root: Path, model_id: str, tokenizer: PreTrainedTokenizerB
         lambda: fix_masks(_texts(_test_documents(data_root, len(validation))), tokenizer),
     )
     return DaptData(training=training, validation=validation, test=test)
+
+
+def _ntcir1_documents(data_root: Path) -> list[Document]:
+    paths = collection_paths("ntcir1", data_root)
+    assert isinstance(paths, Ntcir1Paths)
+    return read_documents(paths.root / paths.documents_archive, paths.documents_member)
 
 
 def _test_documents(data_root: Path, count: int) -> list[Document]:
