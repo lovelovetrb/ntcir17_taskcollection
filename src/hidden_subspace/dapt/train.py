@@ -24,7 +24,8 @@ from hidden_subspace.dapt.data import CACHE_ROOT, prepare_data
 from hidden_subspace.dapt.metrics import MlmTrainer, compute_metrics, keep_top_k
 from hidden_subspace.dapt.splits import SEED
 
-EVAL_STEPS = 500
+EVAL_STEPS = 250
+LOGGING_STEPS = 10
 
 
 def model_dir(config: TrainingConfig) -> Path:
@@ -73,6 +74,7 @@ def train(config: TrainingConfig, data_root: Path) -> Path:
         eval_strategy="steps",
         eval_steps=EVAL_STEPS,
         eval_on_start=True,
+        logging_steps=LOGGING_STEPS,
         save_strategy="no",
         report_to="wandb",
         run_name=config.run_name,
