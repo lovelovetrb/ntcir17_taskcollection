@@ -1,6 +1,7 @@
 # ADR-0027: NTCIR-1 の文書で tohoku-bert に MLM の追加事前学習を行い、主成分の除去の効果が保たれるかを見る
 
-- Status: Accepted
+- Status: **Superseded in part by [ADR-0028](0028-cache-dapt-training-split.md)**
+  （学習データの作り方とキャッシュの扱いを置き換える。以下の本文は決定当時の記録として残す）
 - Date: 2026-10-17
 
 ## 背景
