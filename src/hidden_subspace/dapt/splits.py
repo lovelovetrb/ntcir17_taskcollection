@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence, Set
+from collections.abc import Sequence
 from typing import cast
 
 import torch
@@ -26,11 +26,6 @@ def split_validation(documents: Sequence[Document]) -> tuple[list[Document], lis
         generator=torch.Generator().manual_seed(SEED),
     )
     return [documents[i] for i in training.indices], [documents[i] for i in validation.indices]
-
-
-def exclude(documents: Sequence[Document], excluded_ids: Set[str]) -> list[Document]:
-    """検証に回した文書を除いて学習の文書を作る。検証データはキャッシュから読むため。"""
-    return [d for d in documents if d.document_id not in excluded_ids]
 
 
 def sample_test(

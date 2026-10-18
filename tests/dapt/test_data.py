@@ -9,9 +9,9 @@ from datasets import Dataset
 from transformers import BertTokenizer
 
 from hidden_subspace.corpus.documents import Document
-from hidden_subspace.dapt.evaluation_data import load_or_build
+from hidden_subspace.dapt.data import load_or_build
 from hidden_subspace.dapt.masking import fix_masks
-from hidden_subspace.dapt.splits import exclude, sample_test
+from hidden_subspace.dapt.splits import sample_test
 
 
 def documents(prefix: str, count: int) -> list[Document]:
@@ -34,16 +34,6 @@ def test_sample_test_uses_every_document_of_a_genre_smaller_than_its_share() -> 
 
     assert genres(sampled).count("gakkai") == 2
     assert genres(sampled).count("kaken") == 3
-
-
-def test_exclude_leaves_no_validation_document_in_training() -> None:
-    all_documents = documents("gakkai", 10)
-    validation_ids = {"gakkai-1", "gakkai-4"}
-
-    training = exclude(all_documents, validation_ids)
-
-    assert len(training) == 8
-    assert not {d.document_id for d in training} & validation_ids
 
 
 @pytest.fixture

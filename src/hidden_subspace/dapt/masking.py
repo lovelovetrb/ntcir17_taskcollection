@@ -12,9 +12,9 @@ from datasets import Dataset
 from transformers import DataCollatorForLanguageModeling, PreTrainedTokenizerBase
 
 from hidden_subspace.dapt.splits import SEED
+from hidden_subspace.dapt.tokens import tokenize
 
 MLM_PROBABILITY = 0.15
-MAX_LENGTH = 512
 
 
 def fix_masks(texts: Mapping[str, str], tokenizer: PreTrainedTokenizerBase) -> Dataset:
@@ -25,9 +25,9 @@ def fix_masks(texts: Mapping[str, str], tokenizer: PreTrainedTokenizerBase) -> D
     collator = DataCollatorForLanguageModeling(
         tokenizer, mlm_probability=MLM_PROBABILITY, seed=SEED
     )
-    encoded = tokenizer(list(texts.values()), truncation=True, max_length=MAX_LENGTH)
+    encoded = tokenize(texts, tokenizer)
     rows: dict[str, list] = {"document_id": [], "input_ids": [], "attention_mask": [], "labels": []}
-    for document_id, input_ids in zip(texts, encoded["input_ids"], strict=True):
+    for document_id, input_ids in zip(encoded["document_id"], encoded["input_ids"], strict=True):
         masked = collator([{"input_ids": input_ids}])
         rows["document_id"].append(document_id)
         rows["input_ids"].append(masked["input_ids"][0].tolist())

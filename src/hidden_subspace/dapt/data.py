@@ -1,12 +1,15 @@
-"""隠す位置を固定した検証・テストデータを作り、`cache/dapt/<model_id>/data/` に置く (ADR-0027)。
+"""学習・検証・テストデータを作り、`cache/dapt/<model_id>/data/` に置く (ADR-0027、ADR-0028)。
 
-あれば読み、なければ作る。`splits.py` と `masking.py` の固定値を変えたときは `data/` を
-消してから作り直す。
+学習データは分割・トークン化した状態で置き、隠すのは学習中に行う。検証・テストデータは隠した
+状態で置く。あれば読み、なければ作る。`splits.py`・`tokens.py`・`masking.py` の固定値を
+変えたときは `data/` を消してから作り直す。
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass
+from functools import cache
 from pathlib import Path
 
 from datasets import Dataset, load_from_disk
@@ -17,8 +20,16 @@ from hidden_subspace.corpus.documents import Document, read_documents
 from hidden_subspace.corpus.text import document_text
 from hidden_subspace.dapt.masking import fix_masks
 from hidden_subspace.dapt.splits import sample_test, split_validation
+from hidden_subspace.dapt.tokens import tokenize
 
 CACHE_ROOT = Path("cache/dapt")
+
+
+@dataclass(frozen=True)
+class DaptData:
+    training: Dataset
+    validation: Dataset
+    test: Dataset
 
 
 def data_dir(model_id: str) -> Path:
@@ -35,25 +46,20 @@ def load_or_build(path: Path, build: Callable[[], Dataset]) -> Dataset:
     return dataset
 
 
-def prepare_evaluation_data(
-    data_root: Path, model_id: str, tokenizer: PreTrainedTokenizerBase
-) -> tuple[Dataset, Dataset]:
-    """検証データとテストデータを返す。"""
+def prepare_data(data_root: Path, model_id: str, tokenizer: PreTrainedTokenizerBase) -> DaptData:
     directory = data_dir(model_id)
-    validation = load_or_build(
-        directory / "val", lambda: _masked(_validation_documents(data_root), tokenizer)
-    )
+
+    @cache
+    def split() -> tuple[list[Document], list[Document]]:
+        return split_validation(read_collection(collection_paths("ntcir1", data_root)).documents)
+
+    training = load_or_build(directory / "train", lambda: tokenize(_texts(split()[0]), tokenizer))
+    validation = load_or_build(directory / "val", lambda: fix_masks(_texts(split()[1]), tokenizer))
     test = load_or_build(
         directory / "test",
-        lambda: _masked(_test_documents(data_root, len(validation)), tokenizer),
+        lambda: fix_masks(_texts(_test_documents(data_root, len(validation))), tokenizer),
     )
-    return validation, test
-
-
-def _validation_documents(data_root: Path) -> list[Document]:
-    collection = read_collection(collection_paths("ntcir1", data_root))
-    _, validation = split_validation(collection.documents)
-    return validation
+    return DaptData(training=training, validation=validation, test=test)
 
 
 def _test_documents(data_root: Path, count: int) -> list[Document]:
@@ -66,5 +72,5 @@ def _test_documents(data_root: Path, count: int) -> list[Document]:
     return sample_test(gakkai, kaken, count)
 
 
-def _masked(documents: list[Document], tokenizer: PreTrainedTokenizerBase) -> Dataset:
-    return fix_masks({d.document_id: document_text(d) for d in documents}, tokenizer)
+def _texts(documents: list[Document]) -> dict[str, str]:
+    return {d.document_id: document_text(d) for d in documents}
