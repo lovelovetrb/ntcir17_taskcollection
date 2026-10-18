@@ -1,4 +1,4 @@
-"""追加事前学習を回し、最後のステップのモデルを保存する (ADR-0027)。
+"""追加事前学習を回し、最後のステップのモデルを保存する (ADR-0027、ADR-0028)。
 
 置き場所は `cache/dapt/<model_id>/models/<run_name>/`。wandb のファイルも同じ場所に置く。
 """
@@ -20,10 +20,9 @@ from transformers import (
 
 from hidden_subspace.dapt.collator import MlmCollator
 from hidden_subspace.dapt.config import TrainingConfig
-from hidden_subspace.dapt.evaluation_data import CACHE_ROOT, prepare_evaluation_data
+from hidden_subspace.dapt.data import CACHE_ROOT, prepare_data
 from hidden_subspace.dapt.metrics import MlmTrainer, compute_metrics, keep_top_k
 from hidden_subspace.dapt.splits import SEED
-from hidden_subspace.dapt.training_data import build_training_data
 
 EVAL_STEPS = 500
 
@@ -49,11 +48,10 @@ def train(config: TrainingConfig, data_root: Path) -> Path:
     if not isinstance(tokenizer, PreTrainedTokenizerBase):
         raise TypeError(f"トークナイザを読み込めません: {config.model_id}")
     model = AutoModelForMaskedLM.from_pretrained(config.model_id)
-    validation, test = prepare_evaluation_data(data_root, config.model_id, tokenizer)
-    training = build_training_data(data_root, set(validation["document_id"]), tokenizer)
+    data = prepare_data(data_root, config.model_id, tokenizer)
 
     # Trainer の注釈は torch の Dataset だが、datasets の Dataset もそのまま受け取る
-    evaluation: dict[str, Any] = {"val": validation, "test": test}
+    evaluation: dict[str, Any] = {"val": data.validation, "test": data.test}
 
     output_dir.mkdir(parents=True)
     wandb.init(
@@ -84,7 +82,7 @@ def train(config: TrainingConfig, data_root: Path) -> Path:
         model=model,
         args=arguments,
         data_collator=MlmCollator(tokenizer),
-        train_dataset=training,
+        train_dataset=data.training,
         eval_dataset=evaluation,
         processing_class=tokenizer,
         compute_metrics=compute_metrics,
