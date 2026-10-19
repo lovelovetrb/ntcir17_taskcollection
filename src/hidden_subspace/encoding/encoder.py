@@ -1,7 +1,8 @@
 """モデルを動かして、層ごとの隠れ状態を得る。
 
-モデルは識別子で差し替える。層ごとの出力を得るために `output_hidden_states` を
-必ず有効にする。入力は 512 トークンで打ち切る (ADR-0004)。
+モデルは識別子で差し替える。DAPT で学習したモデルは `dapt/<model_id>/<run_name>` で指す。
+層ごとの出力を得るために `output_hidden_states` を必ず有効にする。入力は 512 トークンで
+打ち切る (ADR-0004)。
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ import torch
 from torch import Tensor
 from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizerBase
 
+from hidden_subspace.dapt.models import resolve_model
 from hidden_subspace.encoding.pooling import mean_pool
 from hidden_subspace.states import HiddenStates
 
@@ -25,12 +27,13 @@ class Encoder:
     def __init__(self, model_id: str, device: str = "cuda") -> None:
         self.model_id = model_id
         self.device = device
+        source = resolve_model(model_id)
         # from_pretrained の注釈は None を含むが、読み込みに失敗すれば例外が上がる
-        tokenizer = AutoTokenizer.from_pretrained(model_id)
+        tokenizer = AutoTokenizer.from_pretrained(source)
         if not isinstance(tokenizer, PreTrainedTokenizerBase):
             raise TypeError(f"トークナイザを読み込めない: {model_id}")
         self.tokenizer: PreTrainedTokenizerBase = tokenizer
-        self.model = AutoModel.from_pretrained(model_id, output_hidden_states=True)
+        self.model = AutoModel.from_pretrained(source, output_hidden_states=True)
         self.model.eval().to(device)
 
     @torch.no_grad()
