@@ -41,3 +41,4 @@
 | [0026](0026-read-ntcir2-as-same-collection.md) | NTCIR-2 を NTCIR-1 と同じ Collection の形で読み、記録とキャッシュをコレクションごとに分ける | Accepted |
 | [0027](0027-dapt-on-ntcir1-documents.md) | NTCIR-1 の文書で tohoku-bert に MLM の追加事前学習を行い、主成分の除去の効果が保たれるかを見る | Superseded in part by 0028 |
 | [0028](0028-cache-dapt-training-split.md) | DAPT の学習データも分割・トークン化した状態でキャッシュし、隠すのは学習中に専用の乱数で行う | Accepted |
+| [0029](0029-pc-mechanism-attributes-and-words.md) | 主成分が何を持つかを、文書の属性との r² と、語ごとの標準化平均差 δ で調べる | Accepted |
