@@ -2,9 +2,11 @@
 ntcir1/
 # 分析の図の置き場で、配布物ではない
 !sandbox/analysis/pc_removal/output/ntcir1/
+!sandbox/analysis/word_frequency/output/ntcir1/
 ntcir2/
 # 分析の図の置き場で、配布物ではない
 !sandbox/analysis/pc_removal/output/ntcir2/
+!sandbox/analysis/word_frequency/output/ntcir2/
 testcollections/
 data/
 *.tgz
