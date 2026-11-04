@@ -36,8 +36,9 @@
 | [0021](0021-split-build-and-view.md) | ビューアを結果ファイルの作成と表示に分け、表示側を軽い環境で動かす | Accepted |
 | [0022](0022-bm25-organizer-notebooks-in-docker.md) | BM25 は組織者のノートブックを当時のバージョンで固定した Docker で実行 | Accepted |
 | [0023](0023-evaluate-bm25-run-as-layer-records.md) | BM25 の run を層と同じ定義で評価し、同じ形の記録として run の隣に置く | Accepted |
-| [0024](0024-sandbox-analysis-layout.md) | 分析のスクリプトと図は sandbox/analysis/ に分析ごとに置き、共通の部品は作らない | Accepted |
+| [0024](0024-sandbox-analysis-layout.md) | 分析のスクリプトと図は sandbox/analysis/ に分析ごとに置き、共通の部品は作らない | Superseded in part by 0029 |
 | [0025](0025-tf-per-token-run-and-generic-run-evaluation.md) | TF ÷ トークン数 の run を BM25 と同じインデックスから作り、run の評価は置き場所から model_id を導く | Accepted |
 | [0026](0026-read-ntcir2-as-same-collection.md) | NTCIR-2 を NTCIR-1 と同じ Collection の形で読み、記録とキャッシュをコレクションごとに分ける | Accepted |
 | [0027](0027-dapt-on-ntcir1-documents.md) | NTCIR-1 の文書で tohoku-bert に MLM の追加事前学習を行い、主成分の除去の効果が保たれるかを見る | Superseded in part by 0028 |
 | [0028](0028-cache-dapt-training-split.md) | DAPT の学習データも分割・トークン化した状態でキャッシュし、隠すのは学習中に専用の乱数で行う | Accepted |
+| [0029](0029-pca-analysis-in-src.md) | 主成分の分析は src/pca/ に置き、結果は results/pca_analysis/ に分析・コレクション・モデルごとに置く | Accepted |

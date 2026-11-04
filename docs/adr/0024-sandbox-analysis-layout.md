@@ -1,6 +1,7 @@
 # ADR-0024: 分析のスクリプトと図は sandbox/analysis/ に分析ごとのディレクトリで置き、共通の部品は作らない
 
-- Status: Accepted
+- Status: **Superseded in part by [ADR-0029](0029-pca-analysis-in-src.md)**
+  （主成分の分析の置き場所・共通の部品・図の扱いを置き換える。以下の本文は決定当時の記録として残す）
 - Date: 2026-09-28
 
 ## 決定
