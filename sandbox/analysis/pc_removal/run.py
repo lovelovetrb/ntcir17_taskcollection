@@ -30,7 +30,6 @@ from analysis.pc_removal.records import (
     removal_condition,
     write_records,
 )
-from analysis.pc_removal.removal import estimate_common_components
 from hidden_subspace.collection import Ntcir2Paths, collection_paths, read_collection
 from hidden_subspace.corpus.documents import as_ntcir2_document_id, read_documents
 from hidden_subspace.encoding.cache import load_cache
@@ -38,6 +37,7 @@ from hidden_subspace.evaluation import CUTOFFS, Relevance, align_relevance, eval
 from hidden_subspace.retrieval import rank_documents
 from hidden_subspace.states import HiddenStates
 from hidden_subspace.vectors import build_search_vectors
+from pca.core.components import estimate_common_components
 
 CACHE_ROOT = Path("cache")
 OUTPUT_DIR = Path(__file__).parent / "output"
