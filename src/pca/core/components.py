@@ -23,6 +23,13 @@ class CommonComponents:
     variance_shares: Tensor
     """`[本数]`。各主成分の分散が、中心化した文書の分散の総和に占める割合。"""
 
+    def scores(self, values: Tensor) -> Tensor:
+        """平均を引いて各主成分の向きに射影した得点 `[文書数, 本数]` を返す。
+
+        `values` は `[文書数, 次元数]`。
+        """
+        return (values.to(self.mean.dtype) - self.mean) @ self.directions
+
     def remove(self, values: Tensor, count: int) -> Tensor:
         """平均を引き、上位 `count` 本の主成分の向きの成分を除く。
 
