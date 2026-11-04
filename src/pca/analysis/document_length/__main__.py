@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from dataclasses import replace
 from pathlib import Path
 
 from hidden_subspace.collection import collection_paths, read_collection
@@ -59,7 +60,12 @@ def main() -> None:
         print(f"layer {layer}")
         values = documents.select_layers([layer]).values[:, 0, :]
         components = estimate_common_components(values, max(PCS))
-        scores = components.scores(values)[:, [pc - 1 for pc in PCS]]
+        selected = [pc - 1 for pc in PCS]
+        scores = replace(
+            components,
+            directions=components.directions[:, selected],
+            variance_shares=components.variance_shares[selected],
+        ).scores(values)
         for group in GROUPS:
             mask = masks[group]
             r = correlations(scores[mask], lengths[mask]).tolist()
