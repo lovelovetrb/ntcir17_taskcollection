@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import torch
 from torch import Tensor
 
 
@@ -10,6 +11,5 @@ def correlations(scores: Tensor, lengths: Tensor) -> Tensor:
 
     float64 で計算して返す。
     """
-    x = scores.double() - scores.double().mean(dim=0)
-    y = lengths.double() - lengths.double().mean()
-    return (x * y[:, None]).sum(dim=0) / (x.norm(dim=0) * y.norm())
+    variables = torch.cat([scores.double().T, lengths.double()[None, :]])
+    return torch.corrcoef(variables)[-1, :-1]
