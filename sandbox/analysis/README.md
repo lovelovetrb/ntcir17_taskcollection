@@ -8,6 +8,7 @@
 | `lexical_correlation/` | #43 | 層ごとのトピック別 nDCG@1000 と BM25 / TF ÷ トークン数 との相関 |
 | `word_sense/` | #46 | 浅い側・深い側の上位文書の語義を Gemini に判定させ、別の意味で解釈した割合を層で比べる |
 | `pc_removal/` | #47 | 層ごとに文書集合の上位 k 本の主成分を除いたときの nDCG@1000 の変化 (全トピック平均と、生基準・k=0 基準のトピック別) と、除いた主成分の分散占有率 |
+| `pos_frequency/` | #91 | NTCIR-2 の品詞の大分類ごとの出現回数と、その品詞の語を含む文書の数 |
 
 実行はリポジトリのルートから。記録 (`results/ntcir1/`) が揃っている必要がある。分析は NTCIR-1 だけを対象にする。
 
@@ -29,4 +30,10 @@ CUDA_VISIBLE_DEVICES=<番号> PYTHONPATH=sandbox uv run python -m analysis.pc_re
 PYTHONPATH=sandbox uv run python -m analysis.pc_removal.plot --collection ntcir2
 CUDA_VISIBLE_DEVICES=<番号> PYTHONPATH=sandbox uv run python -m analysis.pc_removal.run --collection ntcir2-unique
 PYTHONPATH=sandbox uv run python -m analysis.pc_removal.plot --collection ntcir2-unique
+```
+
+`pos_frequency/` は NTCIR-2 の配布物を読み、`src/pca/analysis/common/words.py` と同じく 512 トークンで打ち切った後の文章を MeCab で分けて数える。表は `output/ntcir2.md` に書く。
+
+```
+PYTHONPATH=sandbox uv run python -m analysis.pos_frequency --model cl-tohoku/bert-base-japanese-v3
 ```
