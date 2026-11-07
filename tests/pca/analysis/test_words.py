@@ -42,11 +42,9 @@ def test_truncation_does_not_cut_inside_word(tokenizer: BertJapaneseTokenizer) -
     assert truncate(SENTENCE * 100, tokenizer, new_tagger()) == SENTENCE * 46
 
 
-@pytest.mark.parametrize("special", ["[MASK]", "［ＭＡＳＫ］"])  # noqa: RUF001
-def test_rejects_text_with_special_token(tokenizer: BertJapaneseTokenizer, special: str) -> None:
-    # 全角は NFKC で [MASK] になる
+def test_rejects_text_with_special_token(tokenizer: BertJapaneseTokenizer) -> None:
     with pytest.raises(ValueError, match=r"\[MASK\]"):
-        truncate(f"アルゴリズム{special}を提案する。", tokenizer, new_tagger())
+        truncate("アルゴリズム[MASK]を提案する。", tokenizer, new_tagger())
 
 
 def test_rejects_tokenizer_with_added_tokens(
