@@ -1,4 +1,4 @@
-"""NTCIR-2 の文書を、文書 ID の先頭で学会発表と科研費報告書に分ける (ADR-0030)。"""
+"""NTCIR-2 の文書を、文書 ID の先頭で学会発表と科研費報告書に分ける (ADR-0030、ADR-0032)。"""
 
 from __future__ import annotations
 

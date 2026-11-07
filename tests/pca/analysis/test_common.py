@@ -1,12 +1,12 @@
-"""文書長と主成分の関係を調べる分析の、グループ分けと相関を確かめる。"""
+"""分析をまたいで使う道具の、グループ分けと相関を確かめる。"""
 
 from __future__ import annotations
 
 import pytest
 import torch
 
-from pca.analysis.document_length.correlation import correlations
-from pca.analysis.document_length.groups import group_masks
+from pca.analysis.common.correlation import correlations
+from pca.analysis.common.groups import group_masks
 
 
 def test_groups_documents_by_id_prefix() -> None:
@@ -23,9 +23,9 @@ def test_rejects_document_outside_groups() -> None:
 
 
 def test_correlations_are_computed_per_component() -> None:
-    lengths = torch.tensor([100.0, 200.0, 300.0, 400.0])
-    scores = torch.stack([2 * lengths + 1, -0.5 * lengths], dim=1)
+    values = torch.tensor([100.0, 200.0, 300.0, 400.0])
+    scores = torch.stack([2 * values + 1, -0.5 * values], dim=1)
 
     torch.testing.assert_close(
-        correlations(scores, lengths), torch.tensor([1.0, -1.0], dtype=torch.float64)
+        correlations(scores, values), torch.tensor([1.0, -1.0], dtype=torch.float64)
     )

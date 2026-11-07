@@ -1,4 +1,4 @@
-"""主成分得点と文書長の散布図を描く (ADR-0030)。
+"""文書ごとの値と主成分得点の散布図を描く (ADR-0030、ADR-0032)。
 
 図の文字は英語にする。環境の日本語フォントに依らずに同じ図が出るようにするため。
 """
@@ -21,11 +21,12 @@ SEED = 0
 
 
 def save_scatter_grid(
-    lengths: np.ndarray,
+    values: np.ndarray,
     scores: np.ndarray,
     pcs: Sequence[int],
     r2: Sequence[float],
     *,
+    xlabel: str,
     title: str,
     path: Path,
 ) -> None:
@@ -34,13 +35,13 @@ def save_scatter_grid(
     `scores[:, i]` は `pcs[i]` 本目の主成分の得点。点は無作為に選んだ `SAMPLE_SIZE` 件だけ描く。
     """
     rng = np.random.default_rng(SEED)
-    sample = rng.choice(len(lengths), size=min(SAMPLE_SIZE, len(lengths)), replace=False)
+    sample = rng.choice(len(values), size=min(SAMPLE_SIZE, len(values)), replace=False)
     fig, axes = plt.subplots(3, 3, figsize=(12, 11), constrained_layout=True)
     for ax, pc, column, value in zip(axes.flat, pcs, scores.T, r2, strict=True):
-        ax.scatter(lengths[sample], column[sample], s=2, alpha=0.3, color=POINT_COLOR, linewidths=0)
+        ax.scatter(values[sample], column[sample], s=2, alpha=0.3, color=POINT_COLOR, linewidths=0)
         ax.set_title(f"PC{pc}")
         ax.text(0.97, 0.95, f"r² = {value:.3f}", transform=ax.transAxes, ha="right", va="top")
-        ax.set_xlabel("document length (tokens)")
+        ax.set_xlabel(xlabel)
         ax.set_ylabel("PC score")
     fig.suptitle(title)
     path.parent.mkdir(parents=True, exist_ok=True)
