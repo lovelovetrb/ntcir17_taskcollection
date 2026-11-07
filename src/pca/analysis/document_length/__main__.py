@@ -18,9 +18,9 @@ from pathlib import Path
 from hidden_subspace.collection import collection_paths, read_collection
 from hidden_subspace.corpus.text import document_text
 from hidden_subspace.encoding.cache import load_cache
-from pca.analysis.document_length.correlation import correlations
-from pca.analysis.document_length.figures import save_scatter_grid
-from pca.analysis.document_length.groups import GROUPS, group_masks
+from pca.analysis.common.correlation import correlations
+from pca.analysis.common.figures import save_scatter_grid
+from pca.analysis.common.groups import GROUPS, group_masks
 from pca.analysis.document_length.lengths import document_lengths
 from pca.core.components import estimate_common_components
 
@@ -79,6 +79,7 @@ def main() -> None:
                 scores[mask].numpy(),
                 PCS,
                 r2,
+                xlabel="document length (tokens)",
                 title=f"{arguments.model} / layer {layer} / {group}",
                 path=output_dir / "figures" / f"layer-{layer:02d}-{group}.png",
             )
