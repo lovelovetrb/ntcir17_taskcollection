@@ -1,6 +1,7 @@
 # ADR-0029: 主成分の分析は src/pca/ に置き、結果は results/pca_analysis/ に分析・コレクション・モデルごとに置く
 
-- Status: Accepted
+- Status: **Superseded in part by [ADR-0032](0032-pca-analysis-common.md)**
+  （`core/` に置くものを置き換える。以下の本文は決定当時の記録として残す）
 - Date: 2026-11-04
 - 主成分の分析について、ADR-0024 の「分析は `sandbox/analysis/` に置く」「共通の部品は作らない」
   「図はコミットする」「`results/` は記録専用」を置き換える
