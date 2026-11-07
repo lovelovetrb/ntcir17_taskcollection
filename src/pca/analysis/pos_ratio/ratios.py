@@ -1,4 +1,4 @@
-"""文書ごとに、記号を除いた語に占める助詞・助動詞の割合を出す (ADR-0031)。"""
+"""文書ごとに、記号を除いた語に占める品詞と助詞・助動詞の割合を出す (ADR-0031、ADR-0033)。"""
 
 from __future__ import annotations
 
@@ -32,8 +32,13 @@ class Indicator:
 
 
 INDICATORS = (
+    Indicator("noun", "nouns", "名詞"),
     Indicator("particle", "particles", "助詞"),
+    Indicator("verb", "verbs", "動詞"),
     Indicator("auxiliary", "auxiliary verbs", "助動詞"),
+    Indicator("suffix", "suffixes", "接尾辞"),
+    Indicator("prefix", "prefixes", "接頭辞"),
+    Indicator("adjectival-noun", "adjectival nouns", "形状詞"),
     Indicator("particle-no", "no (case particle)", "助詞", "の", "格助詞"),
     Indicator("particle-wo", "wo (case particle)", "助詞", "を", "格助詞"),
     Indicator("particle-ni", "ni (case particle)", "助詞", "に", "格助詞"),

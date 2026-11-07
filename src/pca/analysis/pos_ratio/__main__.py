@@ -1,9 +1,9 @@
-"""NTCIR-2 で、助詞・助動詞の割合と各主成分の得点の相関を出し、散布図を描く。
+"""NTCIR-2 で、品詞と助詞・助動詞の割合と各主成分の得点の相関を出し、散布図を描く。
 
-相関は指標・層・主成分・グループごとに出す。ADR-0031 の手順に従う。主成分は層ごとに
-全文書から推定する。記録と図は `results/pca_analysis/particle_ratio/ntcir2/<model_id>/` に書く。
+相関は指標・層・主成分・グループごとに出す。ADR-0031・ADR-0033 の手順に従う。主成分は層ごとに
+全文書から推定する。記録と図は `results/pca_analysis/pos_ratio/ntcir2/<model_id>/` に書く。
 
-    PYTHONPATH=src uv run python -m pca.analysis.particle_ratio \
+    PYTHONPATH=src uv run python -m pca.analysis.pos_ratio \
         --model cl-tohoku/bert-base-japanese-v3
 """
 
@@ -21,12 +21,12 @@ from hidden_subspace.encoding.cache import load_cache
 from pca.analysis.common.correlation import correlations
 from pca.analysis.common.figures import save_scatter_grid
 from pca.analysis.common.groups import GROUPS, group_masks
-from pca.analysis.particle_ratio.ratios import INDICATORS, document_ratios
+from pca.analysis.pos_ratio.ratios import INDICATORS, document_ratios
 from pca.core.components import estimate_common_components
 
 COLLECTION = "ntcir2"
 CACHE_ROOT = Path("cache")
-OUTPUT_ROOT = Path("results/pca_analysis/particle_ratio")
+OUTPUT_ROOT = Path("results/pca_analysis/pos_ratio")
 PCS = (1, 2, 3, 5, 10, 20, 50, 100, 200)
 """見る主成分。`pc_removal` で除いた本数 k と同じ。"""
 
