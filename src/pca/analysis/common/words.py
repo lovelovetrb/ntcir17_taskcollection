@@ -38,6 +38,12 @@ def load_tokenizer(model_id: str) -> BertJapaneseTokenizer:
             f"{model_id} のトークナイザーが BertJapaneseTokenizer ではありません。"
             "MeCab で語に分けるモデルを指定してください。"
         )
+    added = sorted(set(tokenizer.get_added_vocab()) - set(tokenizer.all_special_tokens))
+    if added:
+        raise ValueError(
+            f"{model_id} のトークナイザーに追加トークン {added} があります。"
+            "追加トークンを持たないトークナイザーを指定してください。"
+        )
     return tokenizer
 
 
@@ -48,14 +54,20 @@ def truncate(text: str, tokenizer: BertJapaneseTokenizer, tagger: Tagger) -> str
     特殊トークンや小文字化もモデルの入力と同じに扱う。切る位置は MeCab の語の切れ目から、
     収まるうちで最も後ろのものを二分探索で選ぶ。語の途中では切らない。
 
-    本文中の特殊トークン (`[MASK]` など) の内側にある切れ目は候補から外す。内側で切ると、
-    `[MASK` が `[` と `MASK` の 2 個になり、後ろで切るほどトークンが多いとは限らなくなる。
+    正規化した文章に特殊トークン (`[MASK]` など) の文字列があれば止める。モデルは正規化の前に
+    特殊トークンを判定するため数え方がずれ、内側で切ると後ろで切るほどトークンが多いとも
+    限らなくなる。
     """
     text = unicodedata.normalize("NFKC", text)
+    found = [token for token in tokenizer.all_special_tokens if token in text]
+    if found:
+        raise ValueError(
+            f"文章に特殊トークン {found} の文字列があります。"
+            "特殊トークンを含まない文章を渡してください。"
+        )
     if _fits(text, tokenizer):
         return text
-    inside = _inside_special_tokens(text, tokenizer)
-    ends = [end for end in _word_ends(text, tagger) if end not in inside]
+    ends = _word_ends(text, tagger)
     low, high = 0, len(ends)
     while low < high:
         middle = (low + high + 1) // 2
@@ -68,17 +80,6 @@ def truncate(text: str, tokenizer: BertJapaneseTokenizer, tagger: Tagger) -> str
 
 def _fits(text: str, tokenizer: BertJapaneseTokenizer) -> bool:
     return len(tokenizer.tokenize(text)) <= BUDGET
-
-
-def _inside_special_tokens(text: str, tokenizer: BertJapaneseTokenizer) -> set[int]:
-    """本文中の特殊トークンの内側にある位置 (先頭と末尾を除く) を返す。"""
-    inside: set[int] = set()
-    for token in tokenizer.all_special_tokens:
-        start = text.find(token)
-        while start >= 0:
-            inside.update(range(start + 1, start + len(token)))
-            start = text.find(token, start + len(token))
-    return inside
 
 
 def _word_ends(text: str, tagger: Tagger) -> list[int]:

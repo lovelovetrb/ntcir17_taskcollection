@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from transformers import BertJapaneseTokenizer
 
-from pca.analysis.common.words import new_tagger, segment, truncate
+from pca.analysis.common.words import load_tokenizer, new_tagger, segment, truncate
 
 VOCAB = ["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]"]
 VOCAB += ["ア", "##ル", "##ゴ", "##リ", "##ズ", "##ム", "を", "提", "##案", "する", "。"]
@@ -42,19 +42,21 @@ def test_truncation_does_not_cut_inside_word(tokenizer: BertJapaneseTokenizer) -
     assert truncate(SENTENCE * 100, tokenizer, new_tagger()) == SENTENCE * 46
 
 
-def test_counts_special_token_in_text_as_one(tokenizer: BertJapaneseTokenizer) -> None:
-    # 通常のトークナイズでは [MASK] は 1 個で、本文は 506 + 3 + 1 = 510 個に収まる
-    text = SENTENCE * 46 + "提案する[MASK]"
+@pytest.mark.parametrize("special", ["[MASK]", "［ＭＡＳＫ］"])  # noqa: RUF001
+def test_rejects_text_with_special_token(tokenizer: BertJapaneseTokenizer, special: str) -> None:
+    # 全角は NFKC で [MASK] になる
+    with pytest.raises(ValueError, match=r"\[MASK\]"):
+        truncate(f"アルゴリズム{special}を提案する。", tokenizer, new_tagger())
 
-    assert truncate(text, tokenizer, new_tagger()) == text
 
+def test_rejects_tokenizer_with_added_tokens(
+    tokenizer: BertJapaneseTokenizer, tmp_path: Path
+) -> None:
+    tokenizer.add_tokens(["アルゴリズム"])
+    tokenizer.save_pretrained(tmp_path / "added")
 
-def test_does_not_cut_inside_special_token(tokenizer: BertJapaneseTokenizer) -> None:
-    # 「[」までで 510 個、「[MASK」までで 511 個、「[MASK]」までで 510 個になり、
-    # 後ろで切るほどトークンが多いとは限らない
-    kept = "を " * 509 + "[MASK]"
-
-    assert truncate(kept + " を を を", tokenizer, new_tagger()) == kept
+    with pytest.raises(ValueError, match="アルゴリズム"):
+        load_tokenizer(str(tmp_path / "added"))
 
 
 def test_segment_excludes_symbols() -> None:
