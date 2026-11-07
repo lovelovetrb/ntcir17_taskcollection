@@ -30,7 +30,7 @@ def tokenizer(tmp_path: Path) -> BertJapaneseTokenizer:
 def test_truncated_text_fits_in_model_input(tokenizer: BertJapaneseTokenizer) -> None:
     text = SENTENCE * 100
 
-    truncated = truncate(text, tokenizer)
+    truncated = truncate(text, tokenizer, new_tagger())
 
     assert len(truncated) < len(text)
     assert len(tokenizer(truncated)["input_ids"]) <= 512
@@ -39,7 +39,14 @@ def test_truncated_text_fits_in_model_input(tokenizer: BertJapaneseTokenizer) ->
 def test_truncation_does_not_cut_inside_word(tokenizer: BertJapaneseTokenizer) -> None:
     # 46 文で 506 個。47 文目の「アルゴリズム」(6 個) を足すと 512 個になり、
     # [CLS] と [SEP] を除いた 510 個に収まらない
-    assert truncate(SENTENCE * 100, tokenizer) == SENTENCE * 46
+    assert truncate(SENTENCE * 100, tokenizer, new_tagger()) == SENTENCE * 46
+
+
+def test_counts_special_token_in_text_as_one(tokenizer: BertJapaneseTokenizer) -> None:
+    # 通常のトークナイズでは [MASK] は 1 個で、本文は 506 + 3 + 1 = 510 個に収まる
+    text = SENTENCE * 46 + "提案する[MASK]"
+
+    assert truncate(text, tokenizer, new_tagger()) == text
 
 
 def test_segment_excludes_symbols() -> None:

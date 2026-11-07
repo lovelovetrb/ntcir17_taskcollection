@@ -41,28 +41,45 @@ def load_tokenizer(model_id: str) -> BertJapaneseTokenizer:
     return tokenizer
 
 
-def truncate(text: str, tokenizer: BertJapaneseTokenizer) -> str:
+def truncate(text: str, tokenizer: BertJapaneseTokenizer, tagger: Tagger) -> str:
     """モデルが 512 トークンで打ち切ったときに残る範囲の文章を返す。
 
-    トークナイザーと同じく NFKC で正規化してから、MeCab の語を順に WordPiece に分け、
-    収まらなくなった語の手前で切る。語の途中では切らない。
+    トークナイザーと同じく NFKC で正規化する。トークンは `tokenizer.tokenize` で数え、
+    特殊トークンや小文字化もモデルの入力と同じに扱う。切る位置は MeCab の語の切れ目から、
+    収まるうちで最も後ろのものを二分探索で選ぶ。語の途中では切らない。
     """
     text = unicodedata.normalize("NFKC", text)
-    used = 0
+    if _fits(text, tokenizer):
+        return text
+    ends = _word_ends(text, tagger)
+    low, high = 0, len(ends)
+    while low < high:
+        middle = (low + high + 1) // 2
+        if _fits(text[: ends[middle - 1]], tokenizer):
+            low = middle
+        else:
+            high = middle - 1
+    return text[: ends[low - 1]] if low else ""
+
+
+def _fits(text: str, tokenizer: BertJapaneseTokenizer) -> bool:
+    return len(tokenizer.tokenize(text)) <= BUDGET
+
+
+def _word_ends(text: str, tagger: Tagger) -> list[int]:
+    """MeCab の各語が終わる位置を、文章の先頭からの文字数で返す。"""
+    ends = []
     end = 0
-    for word in tokenizer.word_tokenizer.tokenize(text):
-        pieces = len(tokenizer.subword_tokenizer.tokenize(word))
-        if used + pieces > BUDGET:
-            break
-        start = text.find(word, end)
+    for token in tagger(text):
+        start = text.find(token.surface, end)
         if start < 0:
             raise ValueError(
-                f"トークナイザーの語が文章の中に見つかりません: {word!r}。"
-                "トークナイザーの正規化の設定を確認してください。"
+                f"MeCab の語が文章の中に見つかりません: {token.surface!r}。"
+                "MeCab の辞書の設定を確認してください。"
             )
-        used += pieces
-        end = start + len(word)
-    return text[:end]
+        end = start + len(token.surface)
+        ends.append(end)
+    return ends
 
 
 class _Feature(Protocol):
