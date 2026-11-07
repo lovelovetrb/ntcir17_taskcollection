@@ -1,4 +1,4 @@
-# ADR-0032: 分析をまたいで使う道具は src/pca/analysis/common/ に置き、src/pca/core/ は主成分の推定と得点だけにする
+# ADR-0032: 分析をまたいで使う道具は src/pca/analysis/common/ に置き、src/pca/core/ は主成分の推定・得点・除去だけにする
 
 - Status: Accepted
 - Date: 2026-11-07
@@ -7,7 +7,9 @@
 ## 背景
 
 ADR-0029 は、分析をまたいで使う部品を `src/pca/core/` に置くと決めた。今の `core/` には、
-平均と主成分の推定と、主成分得点の計算 (`components.py`) だけがある。
+`components.py` だけがある。平均と主成分の推定、主成分得点の計算 (`CommonComponents.scores()`)、
+主成分の除去 (`CommonComponents.remove()`) の 3 つで、除去は `sandbox/analysis/pc_removal` が
+文書とクエリに使う。
 
 ADR-0030 の文書長の分析では、次の 3 つを `src/pca/analysis/document_length/` の中に書いた。
 
@@ -22,14 +24,14 @@ ADR-0031 の助詞・助動詞の割合の分析でも、この 3 つを使う�
 
 ```
 src/pca/
-  core/                 主成分の推定と、主成分得点の計算
+  core/                 主成分の推定、主成分得点の計算、主成分の除去
   analysis/
     common/             分析をまたいで使う道具 (相関係数、グループ分け、散布図など)
     <分析名>/            分析ごとのスクリプト
 ```
 
 - `document_length/` の `correlation.py`・`groups.py`・`figures.py` を `analysis/common/` に移す
-- `core/` には、主成分の推定と得点の計算に当たるものだけを置く
+- `core/` には、主成分そのものを扱う処理 (推定・得点の計算・除去) だけを置く
 
 ## 採らなかった案
 
