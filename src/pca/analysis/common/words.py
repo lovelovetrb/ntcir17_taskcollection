@@ -47,11 +47,15 @@ def truncate(text: str, tokenizer: BertJapaneseTokenizer, tagger: Tagger) -> str
     トークナイザーと同じく NFKC で正規化する。トークンは `tokenizer.tokenize` で数え、
     特殊トークンや小文字化もモデルの入力と同じに扱う。切る位置は MeCab の語の切れ目から、
     収まるうちで最も後ろのものを二分探索で選ぶ。語の途中では切らない。
+
+    本文中の特殊トークン (`[MASK]` など) の内側にある切れ目は候補から外す。内側で切ると、
+    `[MASK` が `[` と `MASK` の 2 個になり、後ろで切るほどトークンが多いとは限らなくなる。
     """
     text = unicodedata.normalize("NFKC", text)
     if _fits(text, tokenizer):
         return text
-    ends = _word_ends(text, tagger)
+    inside = _inside_special_tokens(text, tokenizer)
+    ends = [end for end in _word_ends(text, tagger) if end not in inside]
     low, high = 0, len(ends)
     while low < high:
         middle = (low + high + 1) // 2
@@ -64,6 +68,17 @@ def truncate(text: str, tokenizer: BertJapaneseTokenizer, tagger: Tagger) -> str
 
 def _fits(text: str, tokenizer: BertJapaneseTokenizer) -> bool:
     return len(tokenizer.tokenize(text)) <= BUDGET
+
+
+def _inside_special_tokens(text: str, tokenizer: BertJapaneseTokenizer) -> set[int]:
+    """本文中の特殊トークンの内側にある位置 (先頭と末尾を除く) を返す。"""
+    inside: set[int] = set()
+    for token in tokenizer.all_special_tokens:
+        start = text.find(token)
+        while start >= 0:
+            inside.update(range(start + 1, start + len(token)))
+            start = text.find(token, start + len(token))
+    return inside
 
 
 def _word_ends(text: str, tagger: Tagger) -> list[int]:

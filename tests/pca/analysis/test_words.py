@@ -49,6 +49,14 @@ def test_counts_special_token_in_text_as_one(tokenizer: BertJapaneseTokenizer) -
     assert truncate(text, tokenizer, new_tagger()) == text
 
 
+def test_does_not_cut_inside_special_token(tokenizer: BertJapaneseTokenizer) -> None:
+    # 「[」までで 510 個、「[MASK」までで 511 個、「[MASK]」までで 510 個になり、
+    # 後ろで切るほどトークンが多いとは限らない
+    kept = "を " * 509 + "[MASK]"
+
+    assert truncate(kept + " を を を", tokenizer, new_tagger()) == kept
+
+
 def test_segment_excludes_symbols() -> None:
     # unidic-lite は「」と。を補助記号、Σ を記号にする
     words = segment("猫が「犬」を見た。Σ", new_tagger())
