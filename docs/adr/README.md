@@ -43,3 +43,4 @@
 | [0028](0028-cache-dapt-training-split.md) | DAPT の学習データも分割・トークン化した状態でキャッシュし、隠すのは学習中に専用の乱数で行う | Accepted |
 | [0029](0029-pca-analysis-in-src.md) | 主成分の分析は src/pca/ に置き、結果は results/pca_analysis/ に分析・コレクション・モデルごとに置く | Accepted |
 | [0030](0030-document-length-and-pcs.md) | 文書長と主成分の関係を、NTCIR-2 の 3 つのグループで主成分得点との r² と散布図で見る | Accepted |
+| [0031](0031-particle-ratio-and-pcs.md) | 助詞・助動詞の割合と主成分の関係を、ほぼ全文書に含まれる語に絞って主成分得点との r² と散布図で見る | Accepted |
