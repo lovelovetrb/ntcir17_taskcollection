@@ -17,11 +17,25 @@ def test_ratios_are_counts_over_words() -> None:
     # 猫・が・犬・を・見・た の 6 語
     result = ratios_by_name("猫が犬を見た。")
 
-    expected = {"noun": 2 / 6, "particle": 2 / 6, "verb": 1 / 6, "auxiliary": 1 / 6}
-    expected |= {"particle-ga": 1 / 6}
-    expected |= {"particle-wo": 1 / 6, "auxiliary-ta": 1 / 6}
-    assert expected.keys() <= result.keys()
-    assert result == pytest.approx({name: expected.get(name, 0.0) for name in result})
+    expected = {
+        "noun": 2 / 6,
+        "particle": 2 / 6,
+        "verb": 1 / 6,
+        "auxiliary": 1 / 6,
+        "suffix": 0.0,
+        "prefix": 0.0,
+        "adjectival-noun": 0.0,
+        "particle-no": 0.0,
+        "particle-wo": 1 / 6,
+        "particle-ni": 0.0,
+        "particle-te": 0.0,
+        "particle-wa": 0.0,
+        "particle-to": 0.0,
+        "particle-ga": 1 / 6,
+        "particle-de": 0.0,
+        "auxiliary-ta": 1 / 6,
+    }
+    assert result == pytest.approx(expected)
 
 
 def test_same_surface_is_told_apart_by_part_of_speech() -> None:
