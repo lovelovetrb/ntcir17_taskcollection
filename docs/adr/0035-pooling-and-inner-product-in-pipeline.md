@@ -51,7 +51,7 @@ approve された時点とし、パスを参照するコードも同じ PR で�
   DAPT と DPR の両方の識別子を解決する
 - DPR で学習したモデルは `dpr/<model_id>/<run_name>` という識別子で指し、`cache/dpr/<model_id>/models/<run_name>`
   に置く。DAPT の `dapt/<model_id>/<run_name>` と `cache/dapt/<model_id>/models/<run_name>` と同じ形にする
-- DPR の学習のコードは `src/hidden_subspace/dpr/` に置く
+- DPR の学習のコードは `src/dpr/` に置く。評価のパイプライン (`src/hidden_subspace/`) とは別のパッケージにする
 
 ### pc_removal のモデルの選び方
 
@@ -66,6 +66,8 @@ approve された時点とし、パスを参照するコードも同じ PR で�
   モデルの識別子より上に置くと、同じモデルのキャッシュが離れた場所に分かれる
 - **正規化を呼び出しごとに指定する**: ADR-0014 は、層ごとの正規化を呼び出しごとに指定する形にしている。
   最後の正規化も同じ形にすれば、既存の呼び出しは「かける」を指定するだけで結果が変わらない
+- **DPR の学習を `src/` の直下に置く**: 学習は評価のパイプラインとは別の関心ごとで、`src/pca/` と同じく
+  独立したパッケージにする。評価の側からは、学習したモデルを識別子で指すだけで、学習のコードを読まない
 - **`resolve_model` を `dapt/` の外に出す**: DAPT と DPR の両方の識別子を解決するため、どちらかの
   学習のパッケージの中に置くと、もう一方がそのパッケージに依存する
 - **pc_removal を引数で選ぶ**: `run_experiment.py` と `src/pca/analysis/*` はすでに `--model` で選んでいる。
@@ -76,3 +78,4 @@ approve された時点とし、パスを参照するコードも同じ PR で�
 - ADR-0014・ADR-0026・ADR-0029 の Status を `Superseded in part by 0035` にする
 - 既存のキャッシュ・記録・`sandbox/analysis/pc_removal/output/` の図を `mean/` の下に移す
 - `tests/dapt/test_models.py` の `resolve_model` のテストを、移した先に合わせて移す
+- `pyproject.toml` の `[tool.hatch.build.targets.wheel]` の `packages` に `src/dpr` を足す
