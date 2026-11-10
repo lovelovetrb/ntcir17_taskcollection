@@ -46,3 +46,4 @@
 | [0031](0031-particle-ratio-and-pcs.md) | 助詞・助動詞の割合と主成分の関係を、ほぼ全文書に含まれる語に絞って主成分得点との r² と散布図で見る | Superseded in part by 0033 |
 | [0032](0032-pca-analysis-common.md) | 分析をまたいで使う道具は src/pca/analysis/common/ に置き、src/pca/core/ は主成分の推定・得点・除去だけにする | Accepted |
 | [0033](0033-pos-ratio-and-pcs.md) | 品詞の大分類の割合も主成分得点との r² と散布図で見ることにし、分析の名前を pos_ratio にする | Accepted |
+| [0034](0034-reproduce-dpr-x-tt.md) | 組織者の DPR_X_TT を CLS と mean の 2 通りで学習し直し、主成分の除去を全層に当てる | Accepted |
