@@ -26,7 +26,7 @@
 | [0011](0011-follow-transfer1-protocol.md) | NTCIR-17 Transfer-1 のプロトコルに準拠する | Accepted |
 | [0012](0012-bm25-baseline.md) | BM25 は Transfer-1 の指定構成 (PyTerrier + SudachiPy) で再現 | Accepted |
 | [0013](0013-metrics.md) | nDCG / Precision / Recall を k = 1000, 10, 1 で報告 | Accepted |
-| [0014](0014-normalization.md) | 層ごとの L2 正規化を次元選択の後に適用し、有無を実験軸とする | Accepted |
+| [0014](0014-normalization.md) | 層ごとの L2 正規化を次元選択の後に適用し、有無を実験軸とする | Superseded in part by 0035 |
 | [0015](0015-pooled-cache-only.md) | 全件のプーリング済みキャッシュのみを作る | Accepted |
 | [0016](0016-hidden-states-domain-model.md) | 隠れ状態を domain model とし、層と次元の選択を独立させる | Accepted |
 | [0017](0017-vector-construction-concatenation.md) | ベクトルの作り方は連結から始める | Accepted |
@@ -38,12 +38,13 @@
 | [0023](0023-evaluate-bm25-run-as-layer-records.md) | BM25 の run を層と同じ定義で評価し、同じ形の記録として run の隣に置く | Accepted |
 | [0024](0024-sandbox-analysis-layout.md) | 分析のスクリプトと図は sandbox/analysis/ に分析ごとに置き、共通の部品は作らない | Superseded in part by 0029 |
 | [0025](0025-tf-per-token-run-and-generic-run-evaluation.md) | TF ÷ トークン数 の run を BM25 と同じインデックスから作り、run の評価は置き場所から model_id を導く | Accepted |
-| [0026](0026-read-ntcir2-as-same-collection.md) | NTCIR-2 を NTCIR-1 と同じ Collection の形で読み、記録とキャッシュをコレクションごとに分ける | Accepted |
+| [0026](0026-read-ntcir2-as-same-collection.md) | NTCIR-2 を NTCIR-1 と同じ Collection の形で読み、記録とキャッシュをコレクションごとに分ける | Superseded in part by 0035 |
 | [0027](0027-dapt-on-ntcir1-documents.md) | NTCIR-1 の文書で tohoku-bert に MLM の追加事前学習を行い、主成分の除去の効果が保たれるかを見る | Superseded in part by 0028 |
 | [0028](0028-cache-dapt-training-split.md) | DAPT の学習データも分割・トークン化した状態でキャッシュし、隠すのは学習中に専用の乱数で行う | Accepted |
-| [0029](0029-pca-analysis-in-src.md) | 主成分の分析は src/pca/ に置き、結果は results/pca_analysis/ に分析・コレクション・モデルごとに置く | Superseded in part by 0032 |
+| [0029](0029-pca-analysis-in-src.md) | 主成分の分析は src/pca/ に置き、結果は results/pca_analysis/ に分析・コレクション・モデルごとに置く | Superseded in part by 0032, 0035 |
 | [0030](0030-document-length-and-pcs.md) | 文書長と主成分の関係を、NTCIR-2 の 3 つのグループで主成分得点との r² と散布図で見る | Accepted |
 | [0031](0031-particle-ratio-and-pcs.md) | 助詞・助動詞の割合と主成分の関係を、ほぼ全文書に含まれる語に絞って主成分得点との r² と散布図で見る | Superseded in part by 0033 |
 | [0032](0032-pca-analysis-common.md) | 分析をまたいで使う道具は src/pca/analysis/common/ に置き、src/pca/core/ は主成分の推定・得点・除去だけにする | Accepted |
 | [0033](0033-pos-ratio-and-pcs.md) | 品詞の大分類の割合も主成分得点との r² と散布図で見ることにし、分析の名前を pos_ratio にする | Accepted |
 | [0034](0034-reproduce-dpr-x-tt.md) | 組織者の DPR_X_TT を CLS と mean の 2 通りで学習し直し、主成分の除去を全層に当てる | Accepted |
+| [0035](0035-pooling-and-inner-product-in-pipeline.md) | プーリングと内積を選べるようにし、キャッシュと記録はモデルの下にプーリングごとに分ける | Accepted |
