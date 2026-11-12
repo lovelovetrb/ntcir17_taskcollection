@@ -2,7 +2,8 @@
 
 - Status: Accepted
 - Date: 2026-11-10
-- ADR-0014 の「検索ベクトルは常に L2 正規化する」、ADR-0026 と ADR-0029 のキャッシュと記録の置き場所を置き換える
+- ADR-0014 の「検索ベクトルは常に L2 正規化する」、ADR-0026 と ADR-0029 のキャッシュと記録の置き場所、
+  ADR-0034 の「再現できなかったときは 128 トークンで測り直す」を置き換える
 
 ## 背景
 
@@ -24,7 +25,8 @@ ADR-0034 で、組織者の DPR_X_TT を CLS と mean の 2 通りで学習し�
 - エンコーダでプーリングを `mean` と `cls` から選べるようにする。`cls` は各層の先頭トークンの隠れ状態とする
 - キャッシュを読むスクリプト (`run_experiment.py`、`sandbox/analysis/pc_removal`、`src/pca/analysis/*`) は、
   `--model` と `--pooling` でキャッシュを選ぶ
-- `--pooling cls` のときは、層 0 (埋め込み層) を評価にも主成分の除去にも使わない (ADR-0034)
+- CLS のキャッシュには層 0 (埋め込み層) を保存しない。キャッシュを読むすべてのスクリプト (評価、
+  `sandbox/analysis/pc_removal`、`src/pca/analysis/*`) で、層 0 が外れる (ADR-0034)
 
 ### 置き場所
 
@@ -37,8 +39,10 @@ results/pca_analysis/<分析>/<collection>/<model_id>/<pooling>/
 sandbox/analysis/pc_removal/output/<collection>/<model_id>/<pooling>/
 ```
 
-既存のキャッシュと記録はすべて平均プーリングなので、`mean/` の下に移す。移すのは実装の PR が
-approve された時点とし、パスを参照するコードも同じ PR で置き換える。
+既存の隠れ状態のキャッシュと、それから作った評価・分析の記録は、すべて平均プーリングなので `mean/` の下に
+移す。移すのは実装の PR が approve された時点とし、パスを参照するコードも同じ PR で置き換える。
+BM25 と TF ÷ トークン数の run と記録 (`results/ntcir1/bm25/`、`results/ntcir1/tf-per-token/`) は
+プーリングを使わないため、今の場所のままとする。
 
 ### 内積
 
@@ -65,6 +69,11 @@ approve された時点とし、パスを参照するコードも同じ PR で�
 `sandbox/analysis/pc_removal/run.py` と `plot.py` の `MODELS` 辞書をやめ、`--model` と `--pooling` の
 引数で 1 つずつ回す。
 
+### 再現できなかったときの扱い
+
+ADR-0034 の「0.353 ± 0.02 に入らなければ、文書を 128 トークンで打ち切って測り直す」を取り消す。
+入らなかったときの扱いは、その時点で決める。
+
 ### pc_removal の記録の形
 
 本体の実験 (`src/hidden_subspace/experiment/writer.py`) と同じ形にする。
@@ -90,6 +99,11 @@ sandbox/analysis/pc_removal/output/<collection>/<model_id>/<pooling>/
   独立したパッケージにする。評価の側からは、学習したモデルを識別子で指すだけで、学習のコードを読まない
 - **`resolve_model` を `dapt/` の外に出す**: DAPT と DPR の両方の識別子を解決するため、どちらかの
   学習のパッケージの中に置くと、もう一方がそのパッケージに依存する
+- **CLS の層 0 をキャッシュに保存しない**: CLS の層 0 は全文書で同じベクトルになる (ADR-0034)。評価だけで
+  なく、`src/pca/analysis/*` の文書長・品詞の分析も全層を回すため、分散が 0 になり、記録と図が意味を持たない。
+  キャッシュに入れなければ、スクリプトごとに外す処理を書かずに済む
+- **128 トークンで測り直す手順を取り消す**: 測り直すには、同じモデル・同じプーリングで打ち切り長だけが違う
+  キャッシュと記録の置き場所が要る。実際に要るかは、512 で測ってからでないと分からない
 - **類似度を記録の条件にし、同じファイルに書く**: 別々の実行にすると、置き場所が同じため後の実行が前の
   記録を上書きする。同じファイルに書いても、記録に類似度がないと、層・条件・トピックが同じ行を区別できない。
   正規化は検索の直前に 1 層分のベクトルにかけるだけで、隠れ状態を 2 通り持つ必要はない
@@ -100,7 +114,7 @@ sandbox/analysis/pc_removal/output/<collection>/<model_id>/<pooling>/
 
 ## 結果
 
-- ADR-0014・ADR-0026・ADR-0029 の Status を `Superseded in part by 0035` にする
+- ADR-0014・ADR-0026・ADR-0029・ADR-0034 の Status を `Superseded in part by 0035` にする
 - 既存のキャッシュ・記録・`sandbox/analysis/pc_removal/output/` の図を `mean/` の下に移す
 - 既存の pc_removal の記録 (`metrics-<model>.jsonl`、コミットしていない) は新しい形で読めないため、
   `mean/` に移した後に作り直す。キャッシュがあるのでエンコードは要らない

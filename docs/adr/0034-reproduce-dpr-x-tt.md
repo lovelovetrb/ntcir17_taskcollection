@@ -1,6 +1,7 @@
 # ADR-0034: 組織者の DPR_X_TT を CLS と mean の 2 通りで学習し直し、主成分の除去を全層に当てる
 
-- Status: Accepted
+- Status: **Superseded in part by [ADR-0035](0035-pooling-and-inner-product-in-pipeline.md)**
+  （再現できなかったときに 128 トークンで測り直す手順を取り消す。以下の本文は決定当時の記録として残す）
 - Date: 2026-11-10
 
 ## 背景
