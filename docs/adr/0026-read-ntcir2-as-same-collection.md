@@ -1,6 +1,7 @@
 # ADR-0026: NTCIR-2 を NTCIR-1 と同じ Collection の形で読み、記録とキャッシュをコレクションごとに分ける
 
-- Status: Accepted
+- Status: **Superseded in part by [ADR-0035](0035-pooling-and-inner-product-in-pipeline.md)**
+  （キャッシュと記録の置き場所を置き換える。以下の本文は決定当時の記録として残す）
 - Date: 2026-10-13
 - ADR-0002 の「文書 ID の正規化層」「gain 関数をコレクション固有の設定とする」、ADR-0009 の判定ファイル (`rel1_`) の指定、ADR-0022 の run の置き場所 (`results/bm25`)、ADR-0023 / ADR-0024 / ADR-0025 の置き場所 `results/<model_id>/<experiment>/` を置き換える
 
