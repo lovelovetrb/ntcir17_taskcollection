@@ -81,10 +81,16 @@ def summarize(records: Sequence[TopicRecord]) -> list[SummaryRecord]:
 def write_results(
     directory: Path, records: Sequence[TopicRecord], variances: Sequence[VarianceRecord]
 ) -> None:
-    """3 種類の記録を書く。回し直したときに古い行が残らないよう、ファイルは置き換える。"""
+    """3 種類の記録を書く。回し直したときに古い行が残らないよう、ファイルは置き換える。
+
+    今回の記録にないトピックのファイルも消す。残すと、読み戻すトピックが要約と食い違う。
+    """
     by_topic: dict[str, list[TopicRecord]] = defaultdict(list)
     for record in records:
         by_topic[record.topic_id].append(record)
+    for stale in (directory / TOPIC_DIRECTORY).glob("*.jsonl"):
+        if stale.stem not in by_topic:
+            stale.unlink()
     for topic_id, topic_records in by_topic.items():
         _write_lines(topic_records, directory / TOPIC_DIRECTORY / f"{topic_id}.jsonl")
     _write_lines(summarize(records), directory / SUMMARY_FILE)
