@@ -108,7 +108,7 @@ def main() -> int:
     )
     summary, per_topic = results_of_evaluation(experiment, configuration, evaluation)
     written = write_results(
-        arguments.results / collection_name, ExperimentResults([summary], per_topic)
+        arguments.results / collection_name, ExperimentResults([summary], per_topic), pooling=None
     )
 
     print(f"\n書き出し {written}")

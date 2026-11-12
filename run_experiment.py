@@ -4,13 +4,13 @@
 エンコード済みのキャッシュがなければ作る。全 332,918 件のエンコードには 20 分
 以上かかるが、2 回目以降は保存したものを読む。
 
-キャッシュは `cache/<collection>/<model_id>/`、記録は
-`results/<collection>/<model_id>/<experiment>/` に置く (ADR-0026)。
+キャッシュは `cache/<collection>/<model_id>/<pooling>/`、記録は
+`results/<collection>/<model_id>/<pooling>/<experiment>/` に置く (ADR-0026、ADR-0035)。
 
 使い方:
     python run_experiment.py --collection ntcir1 --experiment layer-sweep
     python run_experiment.py --collection ntcir2 --experiment layer-sweep \
-        --model cl-nagoya/unsup-simcse-ja-base
+        --model cl-nagoya/unsup-simcse-ja-base --pooling cls
 """
 
 from __future__ import annotations
@@ -31,8 +31,9 @@ from hidden_subspace.collection import (
     read_collection,
 )
 from hidden_subspace.corpus.text import document_text, query_text
-from hidden_subspace.encoding.cache import encode_or_load
+from hidden_subspace.encoding.cache import cache_dir, encode_or_load
 from hidden_subspace.encoding.encoder import Encoder
+from hidden_subspace.encoding.pooling import MEAN, POOLINGS, Pooling
 from hidden_subspace.evaluation import CUTOFFS, Relevance, align_relevance
 from hidden_subspace.experiment.plans import build_plans, plan_names
 from hidden_subspace.experiment.results import Configuration, ConfigurationResult
@@ -54,6 +55,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--collection", required=True, choices=COLLECTION_NAMES)
     parser.add_argument("--experiment", required=True, choices=plan_names())
     parser.add_argument("--model", default=DEFAULT_MODEL, help="HuggingFace のモデル識別子")
+    parser.add_argument("--pooling", default=MEAN, choices=POOLINGS)
     parser.add_argument(
         "--data",
         type=Path,
@@ -67,14 +69,19 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def encoded(
-    model_id: str, cache_root: Path, kind: str, texts: Sequence[str], ids: Sequence[str]
+    model_id: str,
+    pooling: Pooling,
+    cache_root: Path,
+    kind: str,
+    texts: Sequence[str],
+    ids: Sequence[str],
 ) -> HiddenStates:
-    path = cache_root / model_id / f"{kind}.pt"
+    path = cache_dir(cache_root, model_id, pooling) / f"{kind}.pt"
 
     def build() -> HiddenStates:
         print(f"  {kind}: {len(texts):,} 件をエンコード")
         started = time.perf_counter()
-        states = Encoder(model_id).encode(texts, ids)
+        states = Encoder(model_id, pooling).encode(texts, ids)
         print(f"  {kind}: {time.perf_counter() - started:.0f} 秒")
         return states
 
@@ -82,10 +89,11 @@ def encoded(
 
 
 def prepare(
-    collection: Collection, model_id: str, cache_root: Path, device: str
+    collection: Collection, model_id: str, pooling: Pooling, cache_root: Path, device: str
 ) -> tuple[HiddenStates, HiddenStates, Relevance]:
     documents = encoded(
         model_id,
+        pooling,
         cache_root,
         "documents",
         [document_text(d) for d in collection.documents],
@@ -93,6 +101,7 @@ def prepare(
     ).to(device)
     queries = encoded(
         model_id,
+        pooling,
         cache_root,
         "queries",
         [query_text(t) for t in collection.topics],
@@ -155,7 +164,7 @@ def main() -> int:
     arguments = parse_arguments()
     print(
         f"コレクション {arguments.collection} / 実験 {arguments.experiment} / "
-        f"モデル {arguments.model}"
+        f"モデル {arguments.model} / プーリング {arguments.pooling}"
     )
 
     collection = read_collection(collection_paths(arguments.collection, arguments.data))
@@ -165,7 +174,11 @@ def main() -> int:
     )
 
     documents, queries, relevance = prepare(
-        collection, arguments.model, arguments.cache / arguments.collection, arguments.device
+        collection,
+        arguments.model,
+        arguments.pooling,
+        arguments.cache / arguments.collection,
+        arguments.device,
     )
 
     plans = build_plans(arguments.experiment, documents.layer_indices, documents.dimension_indices)
@@ -182,7 +195,10 @@ def main() -> int:
     )
     print(f"  {time.perf_counter() - started:.1f} 秒")
 
-    print(f"\n書き出し {write_results(arguments.results / arguments.collection, results)}")
+    written = write_results(
+        arguments.results / arguments.collection, results, pooling=arguments.pooling
+    )
+    print(f"\n書き出し {written}")
     report(results.configurations)
     return 0
 

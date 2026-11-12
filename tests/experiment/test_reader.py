@@ -33,7 +33,7 @@ def topic_result_of(topic_id: str, layer: int) -> TopicResult:
 
 def write_topics(root: Path, topics: list[TopicResult]) -> None:
     summary = ConfigurationResult(EXPERIMENT, topics[0].configuration, {"nDCG@1000": 0.0}, 0, 0)
-    write_results(root, ExperimentResults(configurations=[summary], topics=topics))
+    write_results(root, ExperimentResults(configurations=[summary], topics=topics), pooling="mean")
 
 
 def test_reads_every_row_of_every_topic_file_in_file_name_order(tmp_path: Path) -> None:
@@ -48,7 +48,7 @@ def test_reads_every_row_of_every_topic_file_in_file_name_order(tmp_path: Path) 
         ],
     )
 
-    assert read_topic_results(tmp_path, MODEL_ID, EXPERIMENT) == [
+    assert read_topic_results(tmp_path, MODEL_ID, EXPERIMENT, pooling="mean") == [
         topic_result_of("0001", 0),
         topic_result_of("0001", 1),
         topic_result_of("0002", 0),
@@ -57,13 +57,26 @@ def test_reads_every_row_of_every_topic_file_in_file_name_order(tmp_path: Path) 
 
 
 def test_rejects_an_experiment_that_has_not_been_run(tmp_path: Path) -> None:
-    with pytest.raises(FileNotFoundError, match=r"run_experiment\.py"):
-        read_topic_results(tmp_path, MODEL_ID, EXPERIMENT)
+    with pytest.raises(FileNotFoundError, match=r"run_experiment\.py .* --pooling mean"):
+        read_topic_results(tmp_path, MODEL_ID, EXPERIMENT, pooling="mean")
 
 
 def test_rejects_a_directory_without_records(tmp_path: Path) -> None:
     """記録のないディレクトリは、実験が途中で止まった跡である可能性が高い。"""
-    (tmp_path / MODEL_ID / EXPERIMENT / "topic").mkdir(parents=True)
+    (tmp_path / MODEL_ID / "mean" / EXPERIMENT / "topic").mkdir(parents=True)
 
     with pytest.raises(ValueError):
-        read_topic_results(tmp_path, MODEL_ID, EXPERIMENT)
+        read_topic_results(tmp_path, MODEL_ID, EXPERIMENT, pooling="mean")
+
+
+def test_does_not_read_records_of_another_pooling(tmp_path: Path) -> None:
+    """同じモデルの CLS と mean は別のベクトルで、記録も別の場所に置く (ADR-0035)。"""
+    write_topics(tmp_path, [topic_result_of("0001", 0)])
+
+    with pytest.raises(FileNotFoundError):
+        read_topic_results(tmp_path, MODEL_ID, EXPERIMENT, pooling="cls")
+
+
+def test_points_a_missing_run_evaluation_to_evaluate_run(tmp_path: Path) -> None:
+    with pytest.raises(FileNotFoundError, match=r"evaluate_run\.py"):
+        read_topic_results(tmp_path, "bm25", "ntcir17-transfer/train", pooling=None)

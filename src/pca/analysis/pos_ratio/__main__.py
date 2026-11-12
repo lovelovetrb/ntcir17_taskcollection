@@ -1,10 +1,11 @@
 """NTCIR-2 で、品詞と助詞・助動詞の割合と各主成分の得点の相関を出し、散布図を描く。
 
 相関は指標・層・主成分・グループごとに出す。ADR-0031・ADR-0033 の手順に従う。主成分は層ごとに
-全文書から推定する。記録と図は `results/pca_analysis/pos_ratio/ntcir2/<model_id>/` に書く。
+全文書から推定する。記録と図は `results/pca_analysis/pos_ratio/ntcir2/<model_id>/<pooling>/` に
+書く。
 
     PYTHONPATH=src uv run python -m pca.analysis.pos_ratio \
-        --model cl-tohoku/bert-base-japanese-v3
+        --model cl-tohoku/bert-base-japanese-v3 --pooling mean
 """
 
 from __future__ import annotations
@@ -17,7 +18,8 @@ from pathlib import Path
 
 from hidden_subspace.collection import collection_paths, read_collection
 from hidden_subspace.corpus.text import document_text
-from hidden_subspace.encoding.cache import load_cache
+from hidden_subspace.encoding.cache import cache_dir, load_cache
+from hidden_subspace.encoding.pooling import MEAN, POOLINGS
 from pca.analysis.common.correlation import correlations
 from pca.analysis.common.figures import save_scatter_grid
 from pca.analysis.common.groups import GROUPS, group_masks
@@ -34,6 +36,7 @@ PCS = (1, 2, 3, 5, 10, 20, 50, 100, 200)
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", required=True, help="モデルの識別子")
+    parser.add_argument("--pooling", default=MEAN, choices=POOLINGS)
     parser.add_argument(
         "--data",
         type=Path,
@@ -47,13 +50,15 @@ def parse_arguments() -> argparse.Namespace:
 def main() -> None:
     arguments = parse_arguments()
     collection = read_collection(collection_paths(COLLECTION, arguments.data))
-    documents = load_cache(CACHE_ROOT / COLLECTION / arguments.model / "documents.pt")
+    documents = load_cache(
+        cache_dir(CACHE_ROOT / COLLECTION, arguments.model, arguments.pooling) / "documents.pt"
+    )
     texts = {document.document_id: document_text(document) for document in collection.documents}
     ratios = document_ratios(
         [texts[item_id] for item_id in documents.item_ids], arguments.model, arguments.processes
     )
     masks = group_masks(documents.item_ids)
-    output_dir = OUTPUT_ROOT / COLLECTION / arguments.model
+    output_dir = OUTPUT_ROOT / COLLECTION / arguments.model / arguments.pooling
 
     rows = []
     for layer in documents.layer_indices:

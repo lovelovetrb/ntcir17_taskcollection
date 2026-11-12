@@ -1,8 +1,9 @@
 """結果を JSON Lines として書き出す。
 
-配置は `(model_id)/(experiment)/` の下に、構成ごとの `summary.jsonl` と
+配置は `(model_id)/(pooling)/(experiment)/` の下に、構成ごとの `summary.jsonl` と
 トピックごとの `topic/(topic_id).jsonl`。トピックのファイル数は構成の数に
-よらず一定になる。
+よらず一定になる。プーリングを使わない run の評価 (ADR-0023) は `(pooling)/` を挟まない
+(ADR-0035)。
 """
 
 from __future__ import annotations
@@ -13,13 +14,22 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
+from hidden_subspace.encoding.pooling import Pooling
 from hidden_subspace.experiment.runner import ExperimentResults
 
 SUMMARY_FILE = "summary.jsonl"
 TOPIC_DIRECTORY = "topic"
 
 
-def write_results(root: Path, results: ExperimentResults) -> Path:
+def results_dir(root: Path, model_id: str, pooling: Pooling | None, experiment: str) -> Path:
+    """`root` はコレクションごとの記録の置き場所 (`results/<collection>`)。"""
+    model_root = root / model_id
+    if pooling is not None:
+        model_root = model_root / pooling
+    return model_root / experiment
+
+
+def write_results(root: Path, results: ExperimentResults, *, pooling: Pooling | None) -> Path:
     """結果を書き出し、書き出し先のディレクトリを返す。
 
     構成ごとにファイルを開き直すと開閉が構成数だけ増えるため、まとめて書く。
@@ -29,7 +39,7 @@ def write_results(root: Path, results: ExperimentResults) -> Path:
         raise ValueError("書き出す結果がない")
 
     first = results.configurations[0]
-    base = root / first.configuration.model_id / first.experiment
+    base = results_dir(root, first.configuration.model_id, pooling, first.experiment)
     (base / TOPIC_DIRECTORY).mkdir(parents=True, exist_ok=True)
 
     _write_lines(base / SUMMARY_FILE, (r.as_record() for r in results.configurations))

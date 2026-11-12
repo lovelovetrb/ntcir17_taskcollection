@@ -34,36 +34,48 @@ def results_of() -> ExperimentResults:
     )
 
 
-def test_lays_out_directories_by_model_and_experiment(tmp_path: Path) -> None:
-    write_results(tmp_path, results_of())
+def test_lays_out_directories_by_model_pooling_and_experiment(tmp_path: Path) -> None:
+    write_results(tmp_path, results_of(), pooling="mean")
 
-    base = tmp_path / "cl-tohoku" / "bert-base-japanese-v3" / "layer-sweep"
+    base = tmp_path / "cl-tohoku" / "bert-base-japanese-v3" / "mean" / "layer-sweep"
     assert (base / "summary.jsonl").is_file()
     assert (base / "topic" / "0001.jsonl").is_file()
     assert (base / "topic" / "0002.jsonl").is_file()
 
 
 def test_writes_one_line_per_configuration(tmp_path: Path) -> None:
-    write_results(tmp_path, results_of())
+    write_results(tmp_path, results_of(), pooling="mean")
 
-    path = tmp_path / "cl-tohoku" / "bert-base-japanese-v3" / "layer-sweep" / "summary.jsonl"
+    path = (
+        tmp_path / "cl-tohoku" / "bert-base-japanese-v3" / "mean" / "layer-sweep" / "summary.jsonl"
+    )
     lines = path.read_text(encoding="utf-8").splitlines()
     assert len(lines) == 1
     assert json.loads(lines[0])["layers"] == [3]
 
 
 def test_groups_topic_rows_into_one_file_per_topic(tmp_path: Path) -> None:
-    write_results(tmp_path, results_of())
+    write_results(tmp_path, results_of(), pooling="mean")
 
-    base = tmp_path / "cl-tohoku" / "bert-base-japanese-v3" / "layer-sweep" / "topic"
+    base = tmp_path / "cl-tohoku" / "bert-base-japanese-v3" / "mean" / "layer-sweep" / "topic"
     record = json.loads((base / "0001.jsonl").read_text(encoding="utf-8").splitlines()[0])
     assert record["topic_id"] == "0001"
 
 
 def test_replaces_an_earlier_run(tmp_path: Path) -> None:
     """回し直したときに古い行が残ると、同じ構成が二重に並ぶ。"""
-    write_results(tmp_path, results_of())
-    write_results(tmp_path, results_of())
+    write_results(tmp_path, results_of(), pooling="mean")
+    write_results(tmp_path, results_of(), pooling="mean")
 
-    path = tmp_path / "cl-tohoku" / "bert-base-japanese-v3" / "layer-sweep" / "summary.jsonl"
+    path = (
+        tmp_path / "cl-tohoku" / "bert-base-japanese-v3" / "mean" / "layer-sweep" / "summary.jsonl"
+    )
     assert len(path.read_text(encoding="utf-8").splitlines()) == 1
+
+
+def test_a_run_evaluation_is_laid_out_without_a_pooling(tmp_path: Path) -> None:
+    """BM25 などの run はプーリングを使わないため、今の場所のままにする (ADR-0035)。"""
+    write_results(tmp_path, results_of(), pooling=None)
+
+    base = tmp_path / "cl-tohoku" / "bert-base-japanese-v3" / "layer-sweep"
+    assert (base / "summary.jsonl").is_file()
