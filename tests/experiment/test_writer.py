@@ -19,6 +19,7 @@ CONFIGURATION = Configuration(
     layers=(3,),
     dimensions=DimensionChoice(kind="all"),
     normalize_layers=False,
+    similarity="cosine",
 )
 METRICS = {"nDCG@10": 0.19}
 

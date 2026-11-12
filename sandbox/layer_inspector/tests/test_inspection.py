@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 from pathlib import Path
+
+import pytest
 
 from hidden_subspace.experiment.results import Configuration, DimensionChoice, TopicResult
 from layer_inspector.documents import RankedDocument, TopicDocuments
@@ -35,6 +38,7 @@ def result_of(topic_id: str, layer: int, score: float) -> TopicResult:
         layers=(layer,),
         dimensions=DimensionChoice(kind="all"),
         normalize_layers=False,
+        similarity="cosine",
     )
     return TopicResult("layer-sweep", configuration, topic_id, {"nDCG@1000": score})
 
@@ -94,3 +98,19 @@ def test_rebuilds_when_the_saved_file_was_made_with_other_settings(tmp_path: Pat
 
     assert loaded.settings == SETTINGS
     assert load_inspection(path).settings == SETTINGS
+
+
+def test_a_file_made_before_the_similarity_was_recorded_points_to_rebuilding(
+    tmp_path: Path,
+) -> None:
+    """設定を比べる前に読むため、古い形式のファイルが残ると作り直しに進めない (ADR-0035)。"""
+    path = tmp_path / "inspection.json"
+    save_inspection(inspection_of(), path)
+    record = json.loads(path.read_text(encoding="utf-8"))
+    for choice in record["shallow_favored"] + record["deep_favored"]:
+        del choice["shallow"]["similarity"]
+        del choice["deep"]["similarity"]
+    path.write_text(json.dumps(record), encoding="utf-8")
+
+    with pytest.raises(KeyError, match="make layer-inspector-build"):
+        load_or_build_inspection(path, SETTINGS, inspection_of)

@@ -13,7 +13,16 @@ DIMENSIONS = tuple(range(8))
 def test_layer_sweep_uses_each_layer_alone() -> None:
     plans = build_plans("layer-sweep", LAYERS, DIMENSIONS)
 
-    assert [p.layers for p in plans] == [(0,), (1,), (2,)]
+    assert [p.layers for p in plans] == [(0,), (0,), (1,), (1,), (2,), (2,)]
+
+
+def test_every_configuration_is_run_with_both_similarities() -> None:
+    """内積とコサインを同じ実験の中で回し、同じファイルに書く (ADR-0035)。"""
+    for name in plan_names():
+        plans = build_plans(name, LAYERS, DIMENSIONS)
+
+        assert [p.similarity for p in plans] == ["cosine", "inner_product"] * (len(plans) // 2)
+        assert [p.layers for p in plans[::2]] == [p.layers for p in plans[1::2]]
 
 
 def test_layer_sweep_keeps_every_dimension() -> None:
@@ -32,7 +41,7 @@ def test_layer_sweep_does_not_normalize_layers() -> None:
 def test_layer_combinations_covers_every_subset_of_two_or_more() -> None:
     plans = build_plans("layer-combinations", LAYERS, DIMENSIONS)
 
-    assert [p.layers for p in plans] == [(0, 1), (0, 2), (1, 2), (0, 1, 2)]
+    assert [p.layers for p in plans[::2]] == [(0, 1), (0, 2), (1, 2), (0, 1, 2)]
 
 
 def test_layer_combinations_leaves_out_single_layers() -> None:
@@ -43,10 +52,10 @@ def test_layer_combinations_leaves_out_single_layers() -> None:
 
 
 def test_layer_combinations_counts_8178_for_thirteen_layers() -> None:
-    """13 層から 2 層以上を選ぶ組み合わせは 8,178 通り (ADR-0019)。"""
+    """13 層から 2 層以上を選ぶ組み合わせは 8,178 通り (ADR-0019)。類似度の 2 通りを掛ける。"""
     plans = build_plans("layer-combinations", tuple(range(13)), DIMENSIONS)
 
-    assert len(plans) == 8178
+    assert len(plans) == 8178 * 2
     assert len({p.layers for p in plans}) == 8178
 
 

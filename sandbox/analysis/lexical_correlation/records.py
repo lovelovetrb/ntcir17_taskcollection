@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 
 from hidden_subspace.experiment.reader import read_topic_results
+from hidden_subspace.vectors import COSINE
 
 METRIC = "nDCG@1000"
 
@@ -26,9 +27,14 @@ class LayerScores:
 
 
 def read_layer_scores(results_root: Path, model_id: str) -> LayerScores:
-    """層ごとの記録を、層ごと・トピックごとの表にする。トピックは ID 順に並べる。"""
+    """層ごとの記録を、層ごと・トピックごとの表にする。トピックは ID 順に並べる。
+
+    内積の行も同じ層・トピックで並ぶため、これまでの結果と同じコサインだけを使う。
+    """
     by_layer: dict[int, dict[str, float]] = {}
     for result in read_topic_results(results_root, model_id, "layer-sweep"):
+        if result.configuration.similarity != COSINE:
+            continue
         (layer,) = result.configuration.layers
         by_layer.setdefault(layer, {})[result.topic_id] = result.metrics[METRIC]
 

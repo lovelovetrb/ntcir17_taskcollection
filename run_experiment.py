@@ -43,7 +43,7 @@ from hidden_subspace.states import HiddenStates
 DEFAULT_MODEL = "cl-tohoku/bert-base-japanese-v3"
 REPORTED = ("nDCG@10", "nDCG@1000", "Recall@1000")
 PRIMARY = "nDCG@1000"
-LABEL_WIDTH = 44
+LABEL_WIDTH = 60
 FULL_REPORT_LIMIT = 50
 """これを超える構成数のときは、主指標の上位だけを表にする。"""
 TOP_REPORTED = 20
@@ -111,7 +111,7 @@ def configuration_label(configuration: Configuration) -> str:
     layers = "-".join(str(layer) for layer in configuration.layers)
     choice = configuration.dimensions
     parameters = "".join(f" {name}={value}" for name, value in choice.parameters.items())
-    return f"層 {layers} / 次元 {choice.kind}{parameters}"
+    return f"層 {layers} / 次元 {choice.kind}{parameters} / {configuration.similarity}"
 
 
 def padded(text: str, width: int) -> str:

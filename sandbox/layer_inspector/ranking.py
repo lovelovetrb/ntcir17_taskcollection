@@ -43,8 +43,14 @@ def _plan_of(configuration: Configuration) -> ConfigurationPlan:
             f"次元の選び方が {kind} の記録は検索し直せません。"
             "層ごとの記録 (layer-sweep) を渡してください。"
         )
+    if configuration.similarity is None:
+        raise ValueError(
+            "類似度のない記録 (run の評価) は検索し直せません。"
+            "層ごとの記録 (layer-sweep) を渡してください。"
+        )
     return ConfigurationPlan(
         layers=configuration.layers,
         dimensions=SelectAll(),
         normalize_layers=configuration.normalize_layers,
+        similarity=configuration.similarity,
     )

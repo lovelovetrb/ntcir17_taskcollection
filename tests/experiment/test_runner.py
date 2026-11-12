@@ -9,6 +9,7 @@ from hidden_subspace.evaluation import Relevance, align_relevance, evaluate
 from hidden_subspace.experiment.runner import ConfigurationPlan, rank_configuration, run_experiment
 from hidden_subspace.selection import SelectAll, SelectRandom
 from hidden_subspace.states import HiddenStates
+from hidden_subspace.vectors import Similarity
 
 Pieces = tuple[HiddenStates, HiddenStates, Relevance]
 
@@ -28,8 +29,12 @@ def pieces() -> Pieces:
 def test_produces_one_summary_row_per_configuration(pieces: Pieces) -> None:
     documents, queries, relevance = pieces
     plans = [
-        ConfigurationPlan(layers=(0,), dimensions=SelectAll(), normalize_layers=False),
-        ConfigurationPlan(layers=(1,), dimensions=SelectAll(), normalize_layers=False),
+        ConfigurationPlan(
+            layers=(0,), dimensions=SelectAll(), normalize_layers=False, similarity="cosine"
+        ),
+        ConfigurationPlan(
+            layers=(1,), dimensions=SelectAll(), normalize_layers=False, similarity="cosine"
+        ),
     ]
 
     results = run_experiment(
@@ -48,7 +53,11 @@ def test_produces_one_summary_row_per_configuration(pieces: Pieces) -> None:
 
 def test_produces_one_topic_row_per_configuration_and_topic(pieces: Pieces) -> None:
     documents, queries, relevance = pieces
-    plans = [ConfigurationPlan(layers=(0,), dimensions=SelectAll(), normalize_layers=False)]
+    plans = [
+        ConfigurationPlan(
+            layers=(0,), dimensions=SelectAll(), normalize_layers=False, similarity="cosine"
+        )
+    ]
 
     results = run_experiment(
         experiment="layer-sweep",
@@ -66,7 +75,11 @@ def test_produces_one_topic_row_per_configuration_and_topic(pieces: Pieces) -> N
 
 def test_summary_is_the_average_of_the_topic_rows(pieces: Pieces) -> None:
     documents, queries, relevance = pieces
-    plans = [ConfigurationPlan(layers=(0,), dimensions=SelectAll(), normalize_layers=False)]
+    plans = [
+        ConfigurationPlan(
+            layers=(0,), dimensions=SelectAll(), normalize_layers=False, similarity="cosine"
+        )
+    ]
 
     results = run_experiment(
         experiment="layer-sweep",
@@ -87,7 +100,10 @@ def test_records_the_dimension_choice(pieces: Pieces) -> None:
     documents, queries, relevance = pieces
     plans = [
         ConfigurationPlan(
-            layers=(0, 1), dimensions=SelectRandom(count=4, seed=3), normalize_layers=True
+            layers=(0, 1),
+            dimensions=SelectRandom(count=4, seed=3),
+            normalize_layers=True,
+            similarity="cosine",
         )
     ]
 
@@ -116,7 +132,9 @@ def test_ranks_with_the_hidden_states_of_the_planned_layers() -> None:
     queries = HiddenStates.of(torch.tensor([[[1.0, 0.0], [1.0, 0.0]]]), item_ids=("0001",))
 
     def top_document(layer: int) -> str:
-        plan = ConfigurationPlan(layers=(layer,), dimensions=SelectAll(), normalize_layers=False)
+        plan = ConfigurationPlan(
+            layers=(layer,), dimensions=SelectAll(), normalize_layers=False, similarity="cosine"
+        )
         return rank_configuration(plan, documents, queries).ranked_ids_for("0001")[0]
 
     assert top_document(0) == "a"
@@ -126,7 +144,9 @@ def test_ranks_with_the_hidden_states_of_the_planned_layers() -> None:
 def test_recorded_metrics_are_computed_from_the_same_ranking(pieces: Pieces) -> None:
     """実験の外で順位を求め直しても、記録された指標を出した順位と一致する。"""
     documents, queries, relevance = pieces
-    plan = ConfigurationPlan(layers=(1,), dimensions=SelectAll(), normalize_layers=False)
+    plan = ConfigurationPlan(
+        layers=(1,), dimensions=SelectAll(), normalize_layers=False, similarity="cosine"
+    )
 
     results = run_experiment(
         experiment="layer-sweep",
@@ -142,3 +162,48 @@ def test_recorded_metrics_are_computed_from_the_same_ranking(pieces: Pieces) -> 
     for topic in results.topics:
         row = expected.topic_ids.index(topic.topic_id)
         assert topic.metrics == {name: float(v[row].item()) for name, v in expected.scores.items()}
+
+
+def test_inner_product_ranks_a_longer_document_higher() -> None:
+    """内積では長い文書が上に来やすく、コサインでは長さが効かない (ADR-0035)。
+
+    `a` はクエリと少しずれた向きで短く、`b` は大きくずれた向きで長い。コサインでは `a`、
+    内積では `b` が上に来る。
+    """
+    documents = HiddenStates.of(torch.tensor([[[1.0, 0.1]], [[10.0, 5.0]]]), item_ids=("a", "b"))
+    queries = HiddenStates.of(torch.tensor([[[1.0, 0.0]]]), item_ids=("0001",))
+
+    def top_document(similarity: Similarity) -> str:
+        plan = ConfigurationPlan(
+            layers=(0,), dimensions=SelectAll(), normalize_layers=False, similarity=similarity
+        )
+        return rank_configuration(plan, documents, queries).ranked_ids_for("0001")[0]
+
+    assert top_document("cosine") == "a"
+    assert top_document("inner_product") == "b"
+
+
+def test_records_the_similarity(pieces: Pieces) -> None:
+    documents, queries, relevance = pieces
+    plans = [
+        ConfigurationPlan(
+            layers=(0,), dimensions=SelectAll(), normalize_layers=False, similarity=similarity
+        )
+        for similarity in ("cosine", "inner_product")
+    ]
+
+    results = run_experiment(
+        experiment="layer-sweep",
+        model_id="m",
+        documents=documents,
+        queries=queries,
+        relevance=relevance,
+        plans=plans,
+        ks=(1,),
+    )
+
+    assert [r.as_record()["similarity"] for r in results.configurations] == [
+        "cosine",
+        "inner_product",
+    ]
+    assert {r.configuration.similarity for r in results.topics} == {"cosine", "inner_product"}
