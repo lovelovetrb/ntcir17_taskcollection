@@ -1,8 +1,8 @@
 """モデルを動かして、層ごとの隠れ状態を得る。
 
-モデルは識別子で差し替える。DAPT で学習したモデルは `dapt/<model_id>/<run_name>` で指す。
-層ごとの出力を得るために `output_hidden_states` を必ず有効にする。入力は 512 トークンで
-打ち切る (ADR-0004)。
+モデルは識別子で差し替える。DAPT・DPR で学習したモデルは `dapt/<model_id>/<run_name>`・
+`dpr/<model_id>/<run_name>` で指す。層ごとの出力を得るために `output_hidden_states` を
+必ず有効にする。入力は 512 トークンで打ち切る (ADR-0004)。
 """
 
 from __future__ import annotations
@@ -13,8 +13,8 @@ import torch
 from torch import Tensor
 from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizerBase
 
-from hidden_subspace.dapt.models import resolve_model
 from hidden_subspace.encoding.pooling import mean_pool
+from hidden_subspace.models import resolve_model
 from hidden_subspace.states import HiddenStates
 
 MAX_TOKENS = 512
