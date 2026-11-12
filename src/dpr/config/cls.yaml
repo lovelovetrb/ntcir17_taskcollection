@@ -1,0 +1,19 @@
+# ADR-0034・ADR-0036 で決めた値と、Tevatron の既定値を書く。
+model_id: FacebookAI/xlm-roberta-large
+pooling: cls
+passage_max_len: 512
+query_max_len: 32
+train_group_size: 8
+batch_size: 8
+epochs: 3
+learning_rate: 5.0e-5
+warmup_ratio: 0.1
+seed: 42
+# Tevatron の既定値は flash_attention_2 だが、flash-attn を入れておらず、fp32 でも使えない
+attn_implementation: sdpa
+# チェックポイントはエポックの終わりだけ保存し、最新の 1 つだけ残す。精度は既定値の fp32
+save_strategy: epoch
+save_total_limit: 1
+wandb:
+  project: ntcir17_taskcollection
+  entity: lovelovetrb
