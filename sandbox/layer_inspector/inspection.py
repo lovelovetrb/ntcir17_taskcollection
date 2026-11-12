@@ -19,6 +19,7 @@ from hidden_subspace.encoding.cache import load_cache
 from hidden_subspace.evaluation import align_relevance
 from hidden_subspace.experiment.reader import read_topic_results
 from hidden_subspace.experiment.results import TopicResult
+from hidden_subspace.vectors import COSINE
 from layer_inspector.documents import RankedDocument, TopicDocuments, extract_documents
 from layer_inspector.inputs import ModelInputs, decode_model_inputs
 from layer_inspector.ranking import rank_selected_layers
@@ -64,7 +65,12 @@ def build_inspection(
     検索し直した順位が記録と一致しなければ、結果を作らずに止まる。記録と同じ順位にするため、
     `device` には実験と同じく GPU を渡す。
     """
-    records = read_topic_results(results_root, settings.model_id, settings.experiment)
+    # 内積の行も同じ層・トピックで並ぶため、これまでの結果と同じコサインだけを使う
+    records = [
+        record
+        for record in read_topic_results(results_root, settings.model_id, settings.experiment)
+        if record.configuration.similarity == COSINE
+    ]
     selection = select_topics(
         records,
         settings.metric,
