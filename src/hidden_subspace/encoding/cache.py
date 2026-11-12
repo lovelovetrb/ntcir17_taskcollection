@@ -1,4 +1,7 @@
-"""層ごとの隠れ状態をファイルに保存する。"""
+"""層ごとの隠れ状態をファイルに保存する。
+
+置き場所は `<collection のキャッシュ>/<model_id>/<pooling>/{documents,queries}.pt` (ADR-0035)。
+"""
 
 from __future__ import annotations
 
@@ -8,10 +11,16 @@ from typing import Any, cast
 
 import torch
 
+from hidden_subspace.encoding.pooling import Pooling
 from hidden_subspace.states import HiddenStates
 
 CACHE_DTYPE = torch.float16
 """保存時の精度。全 332,918 件で 6.19 GB に収まる (ADR-0015)。"""
+
+
+def cache_dir(root: Path, model_id: str, pooling: Pooling) -> Path:
+    """`root` はコレクションごとのキャッシュの置き場所 (`cache/<collection>`)。"""
+    return root / model_id / pooling
 
 
 def save_cache(states: HiddenStates, path: Path) -> None:

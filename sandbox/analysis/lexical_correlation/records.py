@@ -8,6 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
+from hidden_subspace.encoding.pooling import MEAN
 from hidden_subspace.experiment.reader import read_topic_results
 from hidden_subspace.vectors import COSINE
 
@@ -32,7 +33,7 @@ def read_layer_scores(results_root: Path, model_id: str) -> LayerScores:
     内積の行も同じ層・トピックで並ぶため、これまでの結果と同じコサインだけを使う。
     """
     by_layer: dict[int, dict[str, float]] = {}
-    for result in read_topic_results(results_root, model_id, "layer-sweep"):
+    for result in read_topic_results(results_root, model_id, "layer-sweep", pooling=MEAN):
         if result.configuration.similarity != COSINE:
             continue
         (layer,) = result.configuration.layers
@@ -50,7 +51,7 @@ def read_run_scores(
     """run の評価の記録 (ADR-0023) を、指定したトピックの順に並べる。"""
     by_topic = {
         result.topic_id: result.metrics[METRIC]
-        for result in read_topic_results(results_root, model_id, experiment)
+        for result in read_topic_results(results_root, model_id, experiment, pooling=None)
     }
     missing = [topic_id for topic_id in topic_ids if topic_id not in by_topic]
     if missing:
