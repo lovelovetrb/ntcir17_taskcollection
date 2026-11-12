@@ -61,6 +61,14 @@ def test_writes_a_summary_one_file_per_topic_and_the_variances(tmp_path: Path) -
     assert read_variance_records(tmp_path) == VARIANCES
 
 
+def test_rewriting_with_fewer_topics_leaves_no_stale_topic_file(tmp_path: Path) -> None:
+    """古いトピックのファイルが残ると、読み戻す記録が要約と食い違う。"""
+    write_results(tmp_path, RECORDS, VARIANCES)
+    write_results(tmp_path, [RECORDS[1], RECORDS[3]], VARIANCES)
+
+    assert {record.topic_id for record in read_topic_records(tmp_path)} == {"0001"}
+
+
 def test_topic_records_are_read_back_in_topic_order(tmp_path: Path) -> None:
     write_results(tmp_path, RECORDS, VARIANCES)
 
