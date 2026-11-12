@@ -15,6 +15,7 @@ from hidden_subspace.experiment.runner import ConfigurationPlan, rank_configurat
 from hidden_subspace.retrieval import Ranking
 from hidden_subspace.selection import SelectAll
 from hidden_subspace.states import HiddenStates
+from hidden_subspace.vectors import COSINE
 
 SHALLOW_LAYERS = (1, 2)
 DEEP_LAYERS = (11, 12)
@@ -32,9 +33,14 @@ class TopicLayers:
 
 
 def best_layers(results: Sequence[TopicResult]) -> dict[str, TopicLayers]:
-    """層ごとの記録から、トピックごとに両側の最良の層を決める。"""
+    """層ごとの記録から、トピックごとに両側の最良の層を決める。
+
+    内積の行も同じ層・トピックで並ぶため、これまでの結果と同じコサインだけを使う。
+    """
     by_topic: dict[str, dict[int, float]] = defaultdict(dict)
     for result in results:
+        if result.configuration.similarity != COSINE:
+            continue
         (layer,) = result.configuration.layers
         by_topic[result.topic_id][layer] = result.metrics[METRIC]
 
@@ -65,7 +71,9 @@ def rank_layers(
     """層ごとに 1 回だけ全トピックの順位を求める。"""
     return {
         layer: rank_configuration(
-            ConfigurationPlan(layers=(layer,), dimensions=SelectAll(), normalize_layers=False),
+            ConfigurationPlan(
+                layers=(layer,), dimensions=SelectAll(), normalize_layers=False, similarity=COSINE
+            ),
             documents,
             queries,
         )

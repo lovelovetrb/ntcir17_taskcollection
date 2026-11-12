@@ -27,6 +27,7 @@ def configuration_of(dimensions: DimensionChoice) -> Configuration:
         layers=(3, 7),
         dimensions=dimensions,
         normalize_layers=True,
+        similarity="cosine",
     )
 
 
@@ -46,6 +47,7 @@ def test_a_configuration_result_is_self_contained() -> None:
         "layers": [3, 7],
         "dimensions": {"kind": "all"},
         "normalize_layers": True,
+        "similarity": "cosine",
         "metrics": METRICS,
         "zero_norm": {"queries": 0, "documents": 2},
     }
@@ -127,3 +129,36 @@ def test_an_evaluation_becomes_one_summary_and_one_row_per_topic() -> None:
     assert [r.topic_id for r in per_topic] == ["0001", "0002"]
     assert per_topic[0].metrics == {"nDCG@1": 1.0, "Recall@1": 0.5}
     assert all(isinstance(v, float) for r in per_topic for v in r.metrics.values())
+
+
+def test_a_record_without_a_similarity_is_rejected() -> None:
+    """ADR-0035 より前の記録には類似度がない。どちらで検索したかを決めつけない。"""
+    record = TopicResult(
+        experiment="layer-sweep",
+        configuration=configuration_of(DimensionChoice(kind="all")),
+        topic_id="0001",
+        metrics=METRICS,
+    ).as_record()
+    del record["similarity"]
+
+    with pytest.raises(KeyError, match="similarity"):
+        TopicResult.from_record(record)
+
+
+def test_a_run_evaluation_without_a_similarity_is_restored() -> None:
+    """run の評価 (ADR-0023) はベクトルで検索しないため、類似度を None で書く。"""
+    configuration = Configuration(
+        model_id="bm25",
+        layers=(),
+        dimensions=DimensionChoice(kind="all"),
+        normalize_layers=False,
+        similarity=None,
+    )
+    result = TopicResult(
+        experiment="ntcir17-transfer",
+        configuration=configuration,
+        topic_id="0001",
+        metrics=METRICS,
+    )
+
+    assert TopicResult.from_record(result.as_record()) == result

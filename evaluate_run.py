@@ -104,6 +104,7 @@ def main() -> int:
         layers=(),
         dimensions=DimensionChoice(kind="all"),
         normalize_layers=False,
+        similarity=None,
     )
     summary, per_topic = results_of_evaluation(experiment, configuration, evaluation)
     written = write_results(

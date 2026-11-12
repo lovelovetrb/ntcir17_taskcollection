@@ -1,7 +1,7 @@
 """実験ごとに、回す構成の一覧を作る。
 
 実験を足すときは、ここに関数を書いて `_BUILDERS` に登録する。実行スクリプトは
-触らない。
+触らない。類似度はコサインと内積の両方を、同じ実験の中で回す (ADR-0035)。
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ from itertools import combinations
 
 from hidden_subspace.experiment.runner import ConfigurationPlan
 from hidden_subspace.selection import SelectAll
+from hidden_subspace.vectors import SIMILARITIES
 
 PlanBuilder = Callable[[Sequence[int], Sequence[int]], list[ConfigurationPlan]]
 """利用できる層と次元の番号から、回す構成の一覧を作る。"""
@@ -24,8 +25,11 @@ def layer_sweep(layers: Sequence[int], dimensions: Sequence[int]) -> list[Config
     """
     del dimensions
     return [
-        ConfigurationPlan(layers=(layer,), dimensions=SelectAll(), normalize_layers=False)
+        ConfigurationPlan(
+            layers=(layer,), dimensions=SelectAll(), normalize_layers=False, similarity=similarity
+        )
         for layer in layers
+        for similarity in SIMILARITIES
     ]
 
 
@@ -35,15 +39,19 @@ def layer_combinations(
     """2 層以上のすべての組み合わせを試す (ADR-0019)。
 
     層が 1 つの構成は層ごとの性能を測る実験が扱うため含めない。13 層なら
-    8,178 通りになる。
+    8,178 通りで、類似度の 2 通りを掛けて 16,356 構成になる。
     """
     del dimensions
     return [
         ConfigurationPlan(
-            layers=combination, dimensions=SelectAll(), normalize_layers=normalize_layers
+            layers=combination,
+            dimensions=SelectAll(),
+            normalize_layers=normalize_layers,
+            similarity=similarity,
         )
         for size in range(2, len(layers) + 1)
         for combination in combinations(layers, size)
+        for similarity in SIMILARITIES
     ]
 
 

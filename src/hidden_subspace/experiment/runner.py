@@ -16,7 +16,7 @@ from hidden_subspace.experiment.results import (
 from hidden_subspace.retrieval import Ranking, rank_documents
 from hidden_subspace.selection import Selector
 from hidden_subspace.states import HiddenStates
-from hidden_subspace.vectors import SearchVectors, build_search_vectors
+from hidden_subspace.vectors import COSINE, SearchVectors, Similarity, build_search_vectors
 
 
 @dataclass(frozen=True)
@@ -29,6 +29,7 @@ class ConfigurationPlan:
     layers: tuple[int, ...]
     dimensions: Selector
     normalize_layers: bool
+    similarity: Similarity
 
 
 @dataclass(frozen=True)
@@ -68,6 +69,7 @@ def run_experiment(
             layers=plan.layers,
             dimensions=describe_dimensions(plan.dimensions),
             normalize_layers=plan.normalize_layers,
+            similarity=plan.similarity,
         )
         outcome = _evaluate_plan(plan, documents, queries, relevance, ks)
         summary, per_topic = results_of_evaluation(
@@ -112,7 +114,11 @@ def _evaluate_plan(
 
 
 def _vectors(states: HiddenStates, plan: ConfigurationPlan) -> SearchVectors:
-    return build_search_vectors(_narrow(states, plan), normalize_layers=plan.normalize_layers)
+    return build_search_vectors(
+        _narrow(states, plan),
+        normalize_layers=plan.normalize_layers,
+        normalize=plan.similarity == COSINE,
+    )
 
 
 def _narrow(states: HiddenStates, plan: ConfigurationPlan) -> HiddenStates:
