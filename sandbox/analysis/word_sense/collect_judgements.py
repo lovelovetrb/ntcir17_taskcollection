@@ -30,7 +30,8 @@ from analysis.word_sense.retrieval import (
 from hidden_subspace.collection import collection_paths, read_collection
 from hidden_subspace.corpus.text import document_text
 from hidden_subspace.corpus.topics import Topic
-from hidden_subspace.encoding.cache import load_cache
+from hidden_subspace.encoding.cache import cache_dir, load_cache
+from hidden_subspace.encoding.pooling import MEAN
 from hidden_subspace.experiment.reader import read_topic_results
 
 MODELS = {
@@ -107,11 +108,14 @@ def main() -> int:
     collection = read_collection(collection_paths("ntcir1", arguments.data))
     topics = {topic.topic_id: topic for topic in collection.topics}
     texts = {document.document_id: document_text(document) for document in collection.documents}
-    layers = best_layers(read_topic_results(arguments.results, model_id, "layer-sweep"))
+    layers = best_layers(
+        read_topic_results(arguments.results, model_id, "layer-sweep", pooling=MEAN)
+    )
     wanted = arguments.topics or sorted(layers)
 
-    documents = load_cache(arguments.cache / model_id / "documents.pt").to(arguments.device)
-    queries = load_cache(arguments.cache / model_id / "queries.pt").to(arguments.device)
+    caches = cache_dir(arguments.cache, model_id, MEAN)
+    documents = load_cache(caches / "documents.pt").to(arguments.device)
+    queries = load_cache(caches / "queries.pt").to(arguments.device)
     rankings = rank_layers((*SHALLOW_LAYERS, *DEEP_LAYERS), documents, queries)
     print(f"検索 {len(wanted)} トピック、{len(SIDES)} 側ずつ ({arguments.device})")
 

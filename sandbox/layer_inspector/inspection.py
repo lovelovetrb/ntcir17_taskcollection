@@ -15,7 +15,8 @@ from typing import Any
 from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
 from hidden_subspace.collection import CollectionPaths, read_collection
-from hidden_subspace.encoding.cache import load_cache
+from hidden_subspace.encoding.cache import cache_dir, load_cache
+from hidden_subspace.encoding.pooling import MEAN
 from hidden_subspace.evaluation import align_relevance
 from hidden_subspace.experiment.reader import read_topic_results
 from hidden_subspace.experiment.results import TopicResult
@@ -68,7 +69,9 @@ def build_inspection(
     # 内積の行も同じ層・トピックで並ぶため、これまでの結果と同じコサインだけを使う
     records = [
         record
-        for record in read_topic_results(results_root, settings.model_id, settings.experiment)
+        for record in read_topic_results(
+            results_root, settings.model_id, settings.experiment, pooling=MEAN
+        )
         if record.configuration.similarity == COSINE
     ]
     selection = select_topics(
@@ -80,8 +83,9 @@ def build_inspection(
     )
 
     collection = read_collection(paths)
-    documents = load_cache(cache_root / settings.model_id / "documents.pt").to(device)
-    queries = load_cache(cache_root / settings.model_id / "queries.pt").to(device)
+    caches = cache_dir(cache_root, settings.model_id, MEAN)
+    documents = load_cache(caches / "documents.pt").to(device)
+    queries = load_cache(caches / "queries.pt").to(device)
     rankings = rank_selected_layers(selection, documents, queries)
     relevance = align_relevance(collection.qrels, queries.item_ids, documents.item_ids)
     verify_against_records(selection, rankings, relevance.to(device))
