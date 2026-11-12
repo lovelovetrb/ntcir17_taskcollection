@@ -117,7 +117,18 @@ def save_inspection(inspection: Inspection, path: Path) -> None:
 
 
 def load_inspection(path: Path) -> Inspection:
-    return _inspection_from(json.loads(path.read_text(encoding="utf-8")))
+    """類似度のない記録 (ADR-0035 より前に作ったファイル) は、消して作り直すよう案内して止める。
+
+    設定を比べる前に読むため、設定を変えても作り直しに進めない。
+    """
+    record = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        return _inspection_from(record)
+    except KeyError as error:
+        raise KeyError(
+            f"{path} は類似度を記録する前 (ADR-0035 より前) の形式です。"
+            "このファイルを消してから make layer-inspector-build を実行してください。"
+        ) from error
 
 
 def load_or_build_inspection(
