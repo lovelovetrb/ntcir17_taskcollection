@@ -48,3 +48,4 @@
 | [0033](0033-pos-ratio-and-pcs.md) | 品詞の大分類の割合も主成分得点との r² と散布図で見ることにし、分析の名前を pos_ratio にする | Accepted |
 | [0034](0034-reproduce-dpr-x-tt.md) | 組織者の DPR_X_TT を CLS と mean の 2 通りで学習し直し、主成分の除去を全層に当てる | Superseded in part by 0035 |
 | [0035](0035-pooling-and-inner-product-in-pipeline.md) | プーリングと内積を選べるようにし、キャッシュと記録はモデルの下にプーリングごとに分ける | Accepted |
+| [0036](0036-dpr-training.md) | DPR の学習データは mMARCO の三つ組から作り、Tevatron の既定値で GPU 1 枚で学習する | Accepted |
