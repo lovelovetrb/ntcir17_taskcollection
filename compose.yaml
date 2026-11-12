@@ -35,7 +35,7 @@ services:
       - "${LAYER_INSPECTOR_PORT:-5955}:5955"
     volumes:
       # 結果ファイルには NTCIR の文書本文が入るため、イメージに入れず読み取り専用でマウントする
-      - ${LAYER_INSPECTOR_RESULT_FILE:-./results/ntcir1/cl-tohoku/bert-base-japanese-v3/layer-inspector/inspection.json}:/data/inspection.json:ro
+      - ${LAYER_INSPECTOR_RESULT_FILE:-./results/ntcir1/cl-tohoku/bert-base-japanese-v3/mean/layer-inspector/inspection.json}:/data/inspection.json:ro
 
   bm25:
     build:

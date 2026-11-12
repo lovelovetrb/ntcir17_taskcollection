@@ -7,7 +7,8 @@
 `--collection ntcir2-unique` では、NTCIR-2 の文書のうち NTCIR-1 に含まれないものだけから
 平均と主成分を推定する。除く処理と評価は NTCIR-2 の全文書に当てる。
 
-キャッシュは `cache/<コレクション>/` から読み、記録は `output/<--collection の値>/` に書く。
+キャッシュは `cache/<コレクション>/<model_id>/mean/` から読み、記録は
+`output/<--collection の値>/<model_id>/mean/` に書く (ADR-0035)。
 
     CUDA_VISIBLE_DEVICES=<番号> PYTHONPATH=sandbox uv run python -m analysis.pc_removal.run \
         --collection ntcir1
@@ -32,7 +33,8 @@ from analysis.pc_removal.records import (
 )
 from hidden_subspace.collection import Ntcir2Paths, collection_paths, read_collection
 from hidden_subspace.corpus.documents import as_ntcir2_document_id, read_documents
-from hidden_subspace.encoding.cache import load_cache
+from hidden_subspace.encoding.cache import cache_dir, load_cache
+from hidden_subspace.encoding.pooling import MEAN
 from hidden_subspace.evaluation import CUTOFFS, Relevance, align_relevance, evaluate
 from hidden_subspace.retrieval import rank_documents
 from hidden_subspace.states import HiddenStates
@@ -50,6 +52,11 @@ MODELS = {
 REMOVED_COUNTS = (0, 1, 2, 3, 5, 10, 20, 50, 100, 200)
 COLLECTIONS = {"ntcir1": "ntcir1", "ntcir2": "ntcir2", "ntcir2-unique": "ntcir2"}
 """`--collection` の値と、キャッシュと配布物を読むコレクション。"""
+
+
+def output_dir_of(collection: str, model_id: str) -> Path:
+    """`collection` は `--collection` の値。"""
+    return OUTPUT_DIR / collection / model_id / MEAN
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -140,12 +147,10 @@ def main() -> None:
     arguments = parse_arguments()
     collection_name = COLLECTIONS[arguments.collection]
     collection = read_collection(collection_paths(collection_name, arguments.data))
-    cache_dir = CACHE_ROOT / collection_name
-    output_dir = OUTPUT_DIR / arguments.collection
-
     for model, model_id in MODELS.items():
-        documents = load_cache(cache_dir / model_id / "documents.pt")
-        queries = load_cache(cache_dir / model_id / "queries.pt")
+        caches = cache_dir(CACHE_ROOT / collection_name, model_id, MEAN)
+        documents = load_cache(caches / "documents.pt")
+        queries = load_cache(caches / "queries.pt")
         relevance = align_relevance(collection.qrels, queries.item_ids, documents.item_ids).to(
             arguments.device
         )
@@ -169,8 +174,9 @@ def main() -> None:
             )
             records += layer_records
             variances += layer_variances
-        write_records(records, output_dir / f"metrics-{model}.jsonl")
-        write_records(variances, output_dir / f"variance-{model}.jsonl")
+        output_dir = output_dir_of(arguments.collection, model_id)
+        write_records(records, output_dir / "metrics.jsonl")
+        write_records(variances, output_dir / "variance.jsonl")
 
 
 if __name__ == "__main__":

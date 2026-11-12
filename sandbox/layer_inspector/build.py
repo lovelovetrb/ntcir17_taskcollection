@@ -14,6 +14,8 @@ from pathlib import Path
 import torch
 
 from hidden_subspace.collection import collection_paths
+from hidden_subspace.encoding.pooling import MEAN
+from hidden_subspace.experiment.writer import results_dir
 from layer_inspector.inspection import (
     InspectionSettings,
     build_inspection,
@@ -35,7 +37,9 @@ COLLECTION = collection_paths(
 )
 CACHE_ROOT = Path("cache/ntcir1")
 RESULTS_ROOT = Path("results/ntcir1")
-RESULT_FILE = RESULTS_ROOT / SETTINGS.model_id / "layer-inspector" / "inspection.json"
+RESULT_FILE = (
+    results_dir(RESULTS_ROOT, SETTINGS.model_id, MEAN, "layer-inspector") / "inspection.json"
+)
 
 
 def main() -> None:
