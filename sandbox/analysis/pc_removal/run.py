@@ -2,16 +2,17 @@
 
 層ごとに、生 (中心化も除去もしない) と、文書の平均を引いて上位 k 本の主成分を除いた
 条件を評価する。k = 0 は中心化だけをした条件。平均と主成分は全文書から推定し、クエリにも
-同じ平均と主成分を当てる。順位付けと評価は本体の実験と同じ関数を使う。
+同じ平均と主成分を当てる。順位付けと評価は本体の実験と同じ関数を使う。どの条件も、内積と
+コサインの 2 通りで検索する (ADR-0035)。
 
 `--collection ntcir2-unique` では、NTCIR-2 の文書のうち NTCIR-1 に含まれないものだけから
 平均と主成分を推定する。除く処理と評価は NTCIR-2 の全文書に当てる。
 
-キャッシュは `cache/<コレクション>/<model_id>/mean/` から読み、記録は
-`output/<--collection の値>/<model_id>/mean/` に書く (ADR-0035)。
+モデルとプーリングは 1 回に 1 つ選ぶ。キャッシュは `cache/<コレクション>/<model_id>/<pooling>/`
+から読み、記録は `output/<--collection の値>/<model_id>/<pooling>/` に書く (ADR-0035)。
 
     CUDA_VISIBLE_DEVICES=<番号> PYTHONPATH=sandbox uv run python -m analysis.pc_removal.run \
-        --collection ntcir1
+        --collection ntcir1 --model cl-tohoku/bert-base-japanese-v3 --pooling mean
 """
 
 from __future__ import annotations
@@ -29,39 +30,35 @@ from analysis.pc_removal.records import (
     TopicRecord,
     VarianceRecord,
     removal_condition,
-    write_records,
+    write_results,
 )
 from hidden_subspace.collection import Ntcir2Paths, collection_paths, read_collection
 from hidden_subspace.corpus.documents import as_ntcir2_document_id, read_documents
 from hidden_subspace.encoding.cache import cache_dir, load_cache
-from hidden_subspace.encoding.pooling import MEAN
+from hidden_subspace.encoding.pooling import MEAN, POOLINGS, Pooling
 from hidden_subspace.evaluation import CUTOFFS, Relevance, align_relevance, evaluate
 from hidden_subspace.retrieval import rank_documents
 from hidden_subspace.states import HiddenStates
-from hidden_subspace.vectors import build_search_vectors
+from hidden_subspace.vectors import COSINE, SIMILARITIES, build_search_vectors
 from pca.core.components import estimate_common_components
 
 CACHE_ROOT = Path("cache")
 OUTPUT_DIR = Path(__file__).parent / "output"
-DAPT_RUN_NAME = "bert-base-japanese-v3-ep3-bs128-lr5e-05-wu0.06"
-MODELS = {
-    "bert": "cl-tohoku/bert-base-japanese-v3",
-    "simcse": "cl-nagoya/unsup-simcse-ja-base",
-    "bert-dapt": f"dapt/cl-tohoku/bert-base-japanese-v3/{DAPT_RUN_NAME}",
-}
 REMOVED_COUNTS = (0, 1, 2, 3, 5, 10, 20, 50, 100, 200)
 COLLECTIONS = {"ntcir1": "ntcir1", "ntcir2": "ntcir2", "ntcir2-unique": "ntcir2"}
 """`--collection` の値と、キャッシュと配布物を読むコレクション。"""
 
 
-def output_dir_of(collection: str, model_id: str) -> Path:
+def output_dir_of(collection: str, model_id: str, pooling: Pooling) -> Path:
     """`collection` は `--collection` の値。"""
-    return OUTPUT_DIR / collection / model_id / MEAN
+    return OUTPUT_DIR / collection / model_id / pooling
 
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--collection", required=True, choices=COLLECTIONS)
+    parser.add_argument("--model", required=True, help="モデルの識別子")
+    parser.add_argument("--pooling", default=MEAN, choices=POOLINGS)
     parser.add_argument(
         "--data",
         type=Path,
@@ -103,21 +100,26 @@ def evaluate_layer(
     def records_of(
         condition: str, document_states: HiddenStates, query_states: HiddenStates
     ) -> list[TopicRecord]:
-        ranking = rank_documents(
-            build_search_vectors(query_states, normalize_layers=False, normalize=True),
-            build_search_vectors(document_states, normalize_layers=False, normalize=True),
-        )
-        scores = evaluate(ranking, relevance, CUTOFFS).scores
-        return [
-            TopicRecord(
-                model_id=model_id,
-                layer=layer,
-                condition=condition,
-                topic_id=topic_id,
-                metrics={name: float(values[row].item()) for name, values in scores.items()},
+        records: list[TopicRecord] = []
+        for similarity in SIMILARITIES:
+            normalize = similarity == COSINE
+            ranking = rank_documents(
+                build_search_vectors(query_states, normalize_layers=False, normalize=normalize),
+                build_search_vectors(document_states, normalize_layers=False, normalize=normalize),
             )
-            for row, topic_id in enumerate(ranking.topic_ids)
-        ]
+            scores = evaluate(ranking, relevance, CUTOFFS).scores
+            records += [
+                TopicRecord(
+                    model_id=model_id,
+                    layer=layer,
+                    condition=condition,
+                    similarity=similarity,
+                    topic_id=topic_id,
+                    metrics={name: float(values[row].item()) for name, values in scores.items()},
+                )
+                for row, topic_id in enumerate(ranking.topic_ids)
+            ]
+        return records
 
     records = records_of(RAW, documents, queries)
     components = estimate_common_components(
@@ -147,36 +149,36 @@ def main() -> None:
     arguments = parse_arguments()
     collection_name = COLLECTIONS[arguments.collection]
     collection = read_collection(collection_paths(collection_name, arguments.data))
-    for model, model_id in MODELS.items():
-        caches = cache_dir(CACHE_ROOT / collection_name, model_id, MEAN)
-        documents = load_cache(caches / "documents.pt")
-        queries = load_cache(caches / "queries.pt")
-        relevance = align_relevance(collection.qrels, queries.item_ids, documents.item_ids).to(
-            arguments.device
-        )
-        if arguments.collection == "ntcir2-unique":
-            estimation_mask = unique_document_mask(documents, arguments.data)
-        else:
-            estimation_mask = torch.ones(len(documents.item_ids), dtype=torch.bool)
-        estimation_mask = estimation_mask.to(arguments.device)
-        print(f"推定に使う文書 {int(estimation_mask.sum()):,} / {len(documents.item_ids):,}")
+    model_id = arguments.model
+    caches = cache_dir(CACHE_ROOT / collection_name, model_id, arguments.pooling)
+    documents = load_cache(caches / "documents.pt")
+    queries = load_cache(caches / "queries.pt")
+    relevance = align_relevance(collection.qrels, queries.item_ids, documents.item_ids).to(
+        arguments.device
+    )
+    if arguments.collection == "ntcir2-unique":
+        estimation_mask = unique_document_mask(documents, arguments.data)
+    else:
+        estimation_mask = torch.ones(len(documents.item_ids), dtype=torch.bool)
+    estimation_mask = estimation_mask.to(arguments.device)
+    print(f"推定に使う文書 {int(estimation_mask.sum()):,} / {len(documents.item_ids):,}")
 
-        records: list[TopicRecord] = []
-        variances: list[VarianceRecord] = []
-        for layer in documents.layer_indices:
-            print(f"{model} layer {layer}")
-            layer_records, layer_variances = evaluate_layer(
-                model_id,
-                documents.select_layers([layer]).to(arguments.device),
-                queries.select_layers([layer]).to(arguments.device),
-                relevance,
-                estimation_mask,
-            )
-            records += layer_records
-            variances += layer_variances
-        output_dir = output_dir_of(arguments.collection, model_id)
-        write_records(records, output_dir / "metrics.jsonl")
-        write_records(variances, output_dir / "variance.jsonl")
+    records: list[TopicRecord] = []
+    variances: list[VarianceRecord] = []
+    for layer in documents.layer_indices:
+        print(f"{model_id} ({arguments.pooling}) layer {layer}")
+        layer_records, layer_variances = evaluate_layer(
+            model_id,
+            documents.select_layers([layer]).to(arguments.device),
+            queries.select_layers([layer]).to(arguments.device),
+            relevance,
+            estimation_mask,
+        )
+        records += layer_records
+        variances += layer_variances
+    output_dir = output_dir_of(arguments.collection, model_id, arguments.pooling)
+    write_results(output_dir, records, variances)
+    print(f"書き出し {output_dir}")
 
 
 if __name__ == "__main__":
