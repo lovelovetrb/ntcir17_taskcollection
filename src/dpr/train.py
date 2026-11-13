@@ -52,7 +52,8 @@ class TrainingConfig:
     def run_name(self) -> str:
         """wandb の run 名。モデルの保存先 `models/<run_name>/` の名前にもなる。
 
-        学習の結果を変える値を全部入れ、どれかを変えれば別の名前になるようにする。
+        学習の結果を変える値を全部入れ、どれかを変えれば別の名前になるようにする。小数は丸めずに
+        書く。丸めると、Tevatron に渡す値が違っても同じ名前になる。
         Attention の実装、チェックポイントの残し方、wandb の送り先は、学習したモデルを変えない
         ので入れない。
         """
@@ -60,7 +61,7 @@ class TrainingConfig:
         return (
             f"{model}-{self.pooling}-p{self.passage_max_len}-q{self.query_max_len}"
             f"-g{self.train_group_size}-ep{self.epochs}-bs{self.batch_size}"
-            f"-lr{self.learning_rate:g}-wu{self.warmup_ratio:g}-s{self.seed}"
+            f"-lr{self.learning_rate!r}-wu{self.warmup_ratio!r}-s{self.seed}"
         )
 
 
@@ -90,7 +91,9 @@ def tevatron_arguments(config: TrainingConfig, data_path: Path, output_dir: Path
         "--per_device_train_batch_size": str(config.batch_size),
         "--num_train_epochs": str(config.epochs),
         "--learning_rate": str(config.learning_rate),
-        "--warmup_ratio": str(config.warmup_ratio),
+        # transformers 5 は warmup_steps だけを見る。Tevatron の warmup_ratio は受け取られるが
+        # スケジューラに届かず、warmup が 0 ステップになる。1 未満の値は割合として扱われる
+        "--warmup_steps": str(config.warmup_ratio),
         "--seed": str(config.seed),
         "--save_strategy": config.save_strategy,
         "--report_to": "wandb",
