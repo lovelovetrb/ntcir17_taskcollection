@@ -76,7 +76,19 @@ def test_rows_are_written_one_per_line_without_a_partial_file(tmp_path: Path) ->
     lines = path.read_text(encoding="utf-8").splitlines()
     assert count == len(lines) == 2
     assert json.loads(lines[1])["query"] == "質問 2"
-    assert list(tmp_path.iterdir()) == [path]
+    assert sorted(tmp_path.iterdir()) == [path]
+
+
+def test_writing_does_not_touch_another_writer_s_partial_file(tmp_path: Path) -> None:
+    """CLS と mean の学習を同時に始めると、同じ学習データを 2 つのプロセスが作る。"""
+    path = tmp_path / "train.jsonl"
+    other = tmp_path / "train.jsonl.partial"
+    other.write_text("書きかけ\n", encoding="utf-8")
+
+    write_rows(training_rows(group_triples(TRIPLES), QUERIES, PASSAGES), path)
+
+    assert other.read_text(encoding="utf-8") == "書きかけ\n"
+    assert len(path.read_text(encoding="utf-8").splitlines()) == 2
 
 
 def test_existing_training_data_is_used_as_it_is(tmp_path: Path) -> None:

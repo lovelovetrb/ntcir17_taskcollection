@@ -50,6 +50,7 @@ def test_the_configs_hold_the_values_decided_in_the_adrs() -> None:
         ("batch_size", 16),
         ("epochs", 1),
         ("learning_rate", 1e-5),
+        ("learning_rate", 5.000001e-5),
         ("warmup_ratio", 0.06),
         ("seed", 0),
     ],
@@ -90,6 +91,8 @@ def test_tevatron_receives_the_config_values(tmp_path: Path) -> None:
     assert value_of(arguments, "--per_device_train_batch_size") == "8"
     assert value_of(arguments, "--save_strategy") == "epoch"
     assert value_of(arguments, "--save_total_limit") == "1"
+    assert value_of(arguments, "--warmup_steps") == "0.1"
+    assert "--warmup_ratio" not in arguments
     assert value_of(arguments, "--dataset_path") == str(tmp_path / "train.jsonl")
     assert value_of(arguments, "--output_dir") == str(tmp_path / "out")
     assert value_of(arguments, "--run_name") == config.run_name

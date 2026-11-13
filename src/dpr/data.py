@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import json
+import tempfile
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -104,16 +105,23 @@ def write_rows(rows: Iterable[dict[str, Any]], path: Path) -> int:
     """書いた行数を返す。
 
     途中で止まると半端なファイルが残り、次の実行がそれを完成したものとして読む。一時ファイルに
-    書いてから名前を変える。
+    書いてから名前を変える。一時ファイルの名前は呼び出しごとに変え、CLS と mean の学習を同時に
+    始めても互いの一時ファイルを奪わないようにする。
     """
     path.parent.mkdir(parents=True, exist_ok=True)
-    partial = path.with_name(path.name + ".partial")
     count = 0
-    with partial.open("w", encoding="utf-8") as file:
+    with tempfile.NamedTemporaryFile(
+        "w",
+        encoding="utf-8",
+        dir=path.parent,
+        prefix=f"{path.name}.",
+        suffix=".partial",
+        delete=False,
+    ) as file:
         for row in rows:
             file.write(json.dumps(row, ensure_ascii=False) + "\n")
             count += 1
-    partial.replace(path)
+    Path(file.name).replace(path)
     return count
 
 
