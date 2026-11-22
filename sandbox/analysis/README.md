@@ -9,6 +9,7 @@
 | `word_sense/` | #46 | 浅い側・深い側の上位文書の語義を Gemini に判定させ、別の意味で解釈した割合を層で比べる |
 | `pc_removal/` | #47 | 層ごとに文書集合の上位 k 本の主成分を除いたときの nDCG@1000 の変化 (全トピック平均と、生基準・k=0 基準のトピック別) と、除いた主成分の分散占有率 |
 | `pos_frequency/` | #91 | NTCIR-2 の品詞の大分類ごとの出現回数と、その品詞の語を含む文書の数 |
+| `layer_table/` | — | layer-sweep の記録から、層ごとの指標を Markdown の表にして標準出力に書く |
 
 実行はリポジトリのルートから。記録 (`results/ntcir1/`) が揃っている必要がある。分析は NTCIR-1 だけを対象にする。
 
@@ -40,4 +41,11 @@ PYTHONPATH=sandbox uv run python -m analysis.pc_removal.plot --collection ntcir2
 
 ```
 PYTHONPATH=sandbox uv run python -m analysis.pos_frequency --model cl-tohoku/bert-base-japanese-v3
+```
+
+`layer_table/` は `results/<collection>/<model_id>/<pooling>/layer-sweep/summary.jsonl` を読み、行を層、列を類似度 (内積・コサイン) ごとの nDCG@10・nDCG@1000・Recall@1000 にした表を書く。NTCIR-1 と NTCIR-2 を `--collection` で選び、モデルとプーリングは 1 つずつ選ぶ。
+
+```
+PYTHONPATH=sandbox uv run python -m analysis.layer_table --collection ntcir1 \
+    --model dpr/FacebookAI/xlm-roberta-large/<run_name> --pooling cls
 ```
