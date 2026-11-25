@@ -94,8 +94,7 @@ def save_silhouette_grid(records: list[SilhouetteRecord], *, title: str, path: P
         if index + COLUMNS >= len(layers):
             axis.set_xlabel("k", fontsize=9)
 
-    handles, labels = axes.flat[0].get_legend_handles_labels()
-    figure.legend(handles, labels, loc="upper right", fontsize=9, frameon=False)
+    axes.flat[0].legend(loc="lower left", fontsize=7, frameon=False)
     figure.suptitle(title, fontsize=12)
     figure.tight_layout(rect=(0, 0, 1, 0.97))
     figure.savefig(path, dpi=110)
