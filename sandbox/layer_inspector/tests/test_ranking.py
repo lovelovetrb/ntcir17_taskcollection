@@ -72,3 +72,29 @@ def test_rejects_records_whose_dimensions_were_narrowed() -> None:
 
     with pytest.raises(ValueError):
         rank_selected_layers(selection, DOCUMENTS, QUERIES)
+
+
+def test_a_standardized_record_is_ranked_again_with_standardization() -> None:
+    """記録と同じ条件で検索し直す。
+
+    生のコサインでは b がクエリに最も近く、文書の平均と標準偏差で直すと a が最も近くなる。
+    """
+    documents = HiddenStates.of(
+        torch.tensor([[[12.0, 0.0]], [[8.0, 1.0]], [[10.0, -1.0]]]), item_ids=("a", "b", "c")
+    )
+    queries = HiddenStates.of(torch.tensor([[[11.0, 1.0]]]), item_ids=("0001",))
+    configuration = Configuration(
+        model_id="cl-tohoku/bert-base-japanese-v3",
+        layers=(0,),
+        dimensions=DimensionChoice(kind="all"),
+        normalize_layers=False,
+        similarity="cosine",
+        standardize=True,
+    )
+    result = TopicResult("layer-sweep-standardized", configuration, "0001", {"nDCG@1000": 0.0})
+    choice = TopicChoice("0001", shallow=result, deep=result, margin=0.1)
+    selection = TopicSelection(shallow_favored=[choice], deep_favored=[])
+
+    rankings = rank_selected_layers(selection, documents, queries)
+
+    assert rankings[0].ranked_ids_for("0001")[0] == "a"

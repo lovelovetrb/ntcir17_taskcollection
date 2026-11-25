@@ -53,4 +53,5 @@ def _plan_of(configuration: Configuration) -> ConfigurationPlan:
         dimensions=SelectAll(),
         normalize_layers=configuration.normalize_layers,
         similarity=configuration.similarity,
+        standardize=configuration.standardize,
     )
