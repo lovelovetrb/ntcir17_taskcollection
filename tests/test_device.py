@@ -38,8 +38,8 @@ def test_the_whole_path_works_on_a_device() -> None:
     narrowed_documents = documents.select_layers([1]).select_dimensions(range(4))
     narrowed_queries = queries.select_layers([1]).select_dimensions(range(4))
     ranking = rank_documents(
-        build_search_vectors(narrowed_queries, normalize_layers=False),
-        build_search_vectors(narrowed_documents, normalize_layers=False),
+        build_search_vectors(narrowed_queries, normalize_layers=False, normalize=True),
+        build_search_vectors(narrowed_documents, normalize_layers=False, normalize=True),
     )
     result = evaluate(ranking, relevance, ks=(1, 4))
 

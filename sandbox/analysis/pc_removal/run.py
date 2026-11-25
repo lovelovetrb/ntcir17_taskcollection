@@ -97,8 +97,8 @@ def evaluate_layer(
         condition: str, document_states: HiddenStates, query_states: HiddenStates
     ) -> list[TopicRecord]:
         ranking = rank_documents(
-            build_search_vectors(query_states, normalize_layers=False),
-            build_search_vectors(document_states, normalize_layers=False),
+            build_search_vectors(query_states, normalize_layers=False, normalize=True),
+            build_search_vectors(document_states, normalize_layers=False, normalize=True),
         )
         scores = evaluate(ranking, relevance, CUTOFFS).scores
         return [

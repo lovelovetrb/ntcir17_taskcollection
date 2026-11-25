@@ -31,6 +31,7 @@ def result_of(layer: int) -> TopicResult:
         layers=(layer,),
         dimensions=DimensionChoice(kind="all"),
         normalize_layers=False,
+        similarity="cosine",
     )
     return TopicResult("layer-sweep", configuration, "0001", {"nDCG@1000": 0.0})
 

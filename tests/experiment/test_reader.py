@@ -26,6 +26,7 @@ def topic_result_of(topic_id: str, layer: int) -> TopicResult:
         layers=(layer,),
         dimensions=DimensionChoice(kind="all"),
         normalize_layers=False,
+        similarity="cosine",
     )
     return TopicResult(EXPERIMENT, configuration, topic_id, {"nDCG@1000": 0.1 * layer})
 

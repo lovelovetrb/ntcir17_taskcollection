@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from hidden_subspace.evaluation import Evaluation
+from hidden_subspace.vectors import Similarity
 
 
 @dataclass(frozen=True)
@@ -40,12 +41,15 @@ class Configuration:
     `layers` は元のモデルにおける層番号。組み合わせは 2^13 通りありうるが、
     1 つの構成が持つ番号は最大 13 個に収まるため、選び方ではなく結果そのものを
     持つ。次元は 1 つの構成が 768 個持ちうるため、選び方だけを持つ。
+
+    `similarity` はベクトルで検索しない run の評価 (ADR-0023) では None になる。
     """
 
     model_id: str
     layers: tuple[int, ...]
     dimensions: DimensionChoice
     normalize_layers: bool
+    similarity: Similarity | None
 
     def as_record(self) -> dict[str, Any]:
         return {
@@ -53,16 +57,26 @@ class Configuration:
             "layers": list(self.layers),
             "dimensions": self.dimensions.as_record(),
             "normalize_layers": self.normalize_layers,
+            "similarity": self.similarity,
         }
 
     @classmethod
     def from_record(cls, record: Mapping[str, Any]) -> Configuration:
-        """記録では list になっている層番号を tuple に戻す。"""
+        """記録では list になっている層番号を tuple に戻す。
+
+        類似度は ADR-0035 より前の記録にはない。どちらで検索したかを決めつけずに止める。
+        """
+        if "similarity" not in record:
+            raise KeyError(
+                "記録に similarity がありません。ADR-0035 より前の記録です。"
+                "実験を回し直してください。"
+            )
         return cls(
             model_id=record["model_id"],
             layers=tuple(record["layers"]),
             dimensions=DimensionChoice.from_record(record["dimensions"]),
             normalize_layers=record["normalize_layers"],
+            similarity=record["similarity"],
         )
 
 
