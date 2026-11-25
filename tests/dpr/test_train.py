@@ -35,7 +35,7 @@ def test_the_configs_hold_the_values_decided_in_the_adrs() -> None:
     assert config.model_id == "FacebookAI/xlm-roberta-large"
     assert (config.passage_max_len, config.query_max_len) == (512, 32)
     assert (config.train_group_size, config.batch_size, config.epochs) == (8, 8, 3)
-    assert (config.learning_rate, config.warmup_ratio, config.seed) == (5e-5, 0.1, 42)
+    assert (config.learning_rate, config.warmup_ratio, config.seed) == (1e-5, 0.1, 42)
     assert (config.save_strategy, config.save_total_limit) == ("epoch", 1)
 
 
@@ -49,8 +49,8 @@ def test_the_configs_hold_the_values_decided_in_the_adrs() -> None:
         ("train_group_size", 4),
         ("batch_size", 16),
         ("epochs", 1),
-        ("learning_rate", 1e-5),
-        ("learning_rate", 5.000001e-5),
+        ("learning_rate", 5e-5),
+        ("learning_rate", 1.000001e-5),
         ("warmup_ratio", 0.06),
         ("seed", 0),
     ],

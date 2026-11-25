@@ -6,7 +6,7 @@ query_max_len: 32
 train_group_size: 8
 batch_size: 8
 epochs: 3
-learning_rate: 5.0e-5
+learning_rate: 1.0e-5
 warmup_ratio: 0.1
 seed: 42
 # Tevatron の既定値は flash_attention_2 だが、flash-attn を入れておらず、fp32 でも使えない
