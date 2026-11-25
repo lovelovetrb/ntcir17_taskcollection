@@ -37,6 +37,13 @@ PYTHONPATH=sandbox uv run python -m analysis.pc_removal.plot --collection ntcir2
     --model cl-tohoku/bert-base-japanese-v3 --pooling mean
 ```
 
+`pc_removal/table.py` は要約 (`summary.jsonl`) を読み、行を層、列を条件 (生、k=0、k=1 …) にした表を、類似度ごとに Markdown で標準出力に書く。指標は `--metric` で選ぶ (既定値は nDCG@1000)。
+
+```
+PYTHONPATH=sandbox uv run python -m analysis.pc_removal.table --collection ntcir2 \
+    --model cl-tohoku/bert-base-japanese-v3 --pooling mean
+```
+
 `pos_frequency/` は NTCIR-2 の配布物を読み、`src/pca/analysis/common/words.py` と同じく 512 トークンで打ち切った後の文章を MeCab で分けて数える。表は `output/ntcir2.md` に書く。
 
 ```

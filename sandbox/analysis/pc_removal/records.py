@@ -108,6 +108,11 @@ def read_topic_records(directory: Path) -> list[TopicRecord]:
     ]
 
 
+def read_summary_records(directory: Path) -> list[SummaryRecord]:
+    _require(directory / SUMMARY_FILE)
+    return [SummaryRecord(**row) for row in _read_rows(directory / SUMMARY_FILE)]
+
+
 def read_variance_records(directory: Path) -> list[VarianceRecord]:
     _require(directory / VARIANCE_FILE)
     return [VarianceRecord(**row) for row in _read_rows(directory / VARIANCE_FILE)]
