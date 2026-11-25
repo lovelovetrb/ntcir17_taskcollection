@@ -1,7 +1,8 @@
 # ADR-0014: 正規化は層ごとの L2 正規化を次元選択の後に適用し、その有無を実験軸とする
 
-- Status: **Superseded in part by [ADR-0035](0035-pooling-and-inner-product-in-pipeline.md)**
-  （検索ベクトルの正規化を常にかけることを置き換える。以下の本文は決定当時の記録として残す）
+- Status: **Superseded in part by [ADR-0035](0035-pooling-and-inner-product-in-pipeline.md), [ADR-0037](0037-cluster-wise-dimension-selection.md)**
+  （ADR-0035 は検索ベクトルの正規化を常にかけることを、ADR-0037 は座標ごとの標準化を採らないことを
+  その実験について置き換える。以下の本文は決定当時の記録として残す）
 - Date: 2026-08-31
 
 ## 決定
