@@ -86,3 +86,11 @@ def test_chunked_fit_and_apply_match_the_unchunked_result(monkeypatch: pytest.Mo
 def test_fit_refuses_an_empty_document_set() -> None:
     with pytest.raises(ValueError, match="文書が 1 件もありません"):
         fit_standardization(states_of(torch.zeros(0, 2, 3)))
+
+
+def test_applying_to_states_without_dimensions_keeps_the_empty_shape() -> None:
+    states = states_of(torch.randn(5, 2, 3))
+
+    applied = fit_standardization(states).apply(states.select_dimensions([]))
+
+    assert applied.values.shape == (5, 2, 0)

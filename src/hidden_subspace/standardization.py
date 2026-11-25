@@ -82,7 +82,7 @@ def fit_standardization(documents: HiddenStates) -> Standardization:
 def _chunks(values: Tensor) -> Iterator[tuple[int, Tensor]]:
     """先頭の行番号と、float64 に直した行の塊を返す。"""
     _, layers, dimensions = values.shape
-    rows = max(CHUNK_ELEMENTS // (layers * dimensions), 1)
+    rows = max(CHUNK_ELEMENTS // max(layers * dimensions, 1), 1)
     for start in range(0, values.shape[0], rows):
         yield start, values[start : start + rows].double()
 
