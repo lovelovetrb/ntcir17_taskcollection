@@ -11,8 +11,8 @@ from typing import Protocol
 import unidic_lite
 from transformers import AutoTokenizer, BertJapaneseTokenizer
 
-from hidden_subspace.dapt.models import resolve_model
 from hidden_subspace.encoding.encoder import MAX_TOKENS
+from hidden_subspace.models import resolve_model
 
 BUDGET = MAX_TOKENS - 2
 """[CLS] と [SEP] を除いて、文章のトークンに使える数。"""

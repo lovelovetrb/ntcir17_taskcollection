@@ -22,8 +22,8 @@ from hidden_subspace.dapt.collator import MlmCollator
 from hidden_subspace.dapt.config import TrainingConfig
 from hidden_subspace.dapt.data import prepare_data
 from hidden_subspace.dapt.metrics import MlmTrainer, compute_metrics, keep_top_k
-from hidden_subspace.dapt.models import model_dir
 from hidden_subspace.dapt.splits import SEED
+from hidden_subspace.models import model_dir
 
 EVAL_STEPS = 250
 LOGGING_STEPS = 10
@@ -34,7 +34,7 @@ def train(config: TrainingConfig, data_root: Path) -> Path:
 
     同じ run 名のモデルがすでにあれば、上書きせずに止める。
     """
-    output_dir = model_dir(config.model_id, config.run_name)
+    output_dir = model_dir("dapt", config.model_id, config.run_name)
     if output_dir.exists():
         raise FileExistsError(
             f"{output_dir} がすでにあります。"

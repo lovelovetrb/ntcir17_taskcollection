@@ -13,8 +13,8 @@ import torch
 from torch import Tensor
 from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
-from hidden_subspace.dapt.models import resolve_model
 from hidden_subspace.encoding.encoder import MAX_TOKENS
+from hidden_subspace.models import resolve_model
 
 _tokenizer: PreTrainedTokenizerBase | None = None
 
