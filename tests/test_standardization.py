@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 import torch
 
+from hidden_subspace import standardization
 from hidden_subspace.standardization import fit_standardization
 from hidden_subspace.states import HiddenStates
 
@@ -66,3 +67,22 @@ def test_fit_refuses_a_dimension_with_zero_std() -> None:
 
     with pytest.raises(ValueError, match="標準偏差が 0"):
         fit_standardization(states_of(values))
+
+
+def test_chunked_fit_and_apply_match_the_unchunked_result(monkeypatch: pytest.MonkeyPatch) -> None:
+    """区切って計算しても、区切らないときと同じ値になる。"""
+    states = states_of(torch.randn(7, 3, 4) * 5.0 + 2.0)
+    whole = fit_standardization(states)
+    expected = whole.apply(states).values
+
+    monkeypatch.setattr(standardization, "CHUNK_ELEMENTS", 2 * 3 * 4)
+    chunked = fit_standardization(states)
+
+    torch.testing.assert_close(chunked.mean, whole.mean)
+    torch.testing.assert_close(chunked.std, whole.std)
+    torch.testing.assert_close(chunked.apply(states).values, expected)
+
+
+def test_fit_refuses_an_empty_document_set() -> None:
+    with pytest.raises(ValueError, match="文書が 1 件もありません"):
+        fit_standardization(states_of(torch.zeros(0, 2, 3)))
