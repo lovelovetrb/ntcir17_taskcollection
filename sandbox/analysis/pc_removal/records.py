@@ -1,7 +1,7 @@
 """層・条件・トピックごとの指標と、層ごとの分散占有率を JSON Lines で書き、読み戻す。
 
-記録は output/<collection>/ に置くが、拡張子が .jsonl なのでコミットされない (ADR-0024)。
-run.py を回せば作り直せる。
+記録は output/<collection>/<model_id>/mean/ に置くが、拡張子が .jsonl なのでコミットされない
+(ADR-0024)。run.py を回せば作り直せる。
 """
 
 from __future__ import annotations
