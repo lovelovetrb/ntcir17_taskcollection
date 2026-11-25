@@ -15,6 +15,7 @@ from hidden_subspace.experiment.results import (
 )
 from hidden_subspace.retrieval import Ranking, rank_documents
 from hidden_subspace.selection import Selector
+from hidden_subspace.standardization import Standardization, fit_standardization
 from hidden_subspace.states import HiddenStates
 from hidden_subspace.vectors import COSINE, SearchVectors, Similarity, build_search_vectors
 
@@ -30,6 +31,7 @@ class ConfigurationPlan:
     dimensions: Selector
     normalize_layers: bool
     similarity: Similarity
+    standardize: bool = False
 
 
 @dataclass(frozen=True)
@@ -62,6 +64,7 @@ def run_experiment(
     """構成ごとに検索して評価する。"""
     configurations: list[ConfigurationResult] = []
     topics: list[TopicResult] = []
+    standardization = _fit_if_needed(plans, documents)
 
     for plan in plans:
         configuration = Configuration(
@@ -70,8 +73,9 @@ def run_experiment(
             dimensions=describe_dimensions(plan.dimensions),
             normalize_layers=plan.normalize_layers,
             similarity=plan.similarity,
+            standardize=plan.standardize,
         )
-        outcome = _evaluate_plan(plan, documents, queries, relevance, ks)
+        outcome = _evaluate_plan(plan, documents, queries, relevance, ks, standardization)
         summary, per_topic = results_of_evaluation(
             experiment,
             configuration,
@@ -93,7 +97,10 @@ def rank_configuration(
     実験の外で順位を読むときもこれを使う。手順を書き写すと、層や次元の絞り方が
     実験と食い違っても気づけない。
     """
-    return rank_documents(_vectors(queries, plan), _vectors(documents, plan))
+    standardization = _fit_if_needed([plan], documents)
+    return rank_documents(
+        _vectors(queries, plan, standardization), _vectors(documents, plan, standardization)
+    )
 
 
 def _evaluate_plan(
@@ -102,9 +109,10 @@ def _evaluate_plan(
     queries: HiddenStates,
     relevance: Relevance,
     ks: Sequence[int],
+    standardization: Standardization | None,
 ) -> PlanOutcome:
-    query_vectors = _vectors(queries, plan)
-    document_vectors = _vectors(documents, plan)
+    query_vectors = _vectors(queries, plan, standardization)
+    document_vectors = _vectors(documents, plan, standardization)
     ranking = rank_documents(query_vectors, document_vectors)
     return PlanOutcome(
         evaluation=evaluate(ranking, relevance, ks),
@@ -113,9 +121,27 @@ def _evaluate_plan(
     )
 
 
-def _vectors(states: HiddenStates, plan: ConfigurationPlan) -> SearchVectors:
+def _fit_if_needed(
+    plans: Sequence[ConfigurationPlan], documents: HiddenStates
+) -> Standardization | None:
+    """平均と標準偏差は文書だけから求め、問いにも同じ値を当てる (ADR-0037)。"""
+    if not any(plan.standardize for plan in plans):
+        return None
+    return fit_standardization(documents)
+
+
+def _vectors(
+    states: HiddenStates, plan: ConfigurationPlan, standardization: Standardization | None
+) -> SearchVectors:
+    narrowed = _narrow(states, plan)
+    if plan.standardize:
+        if standardization is None:
+            raise ValueError(
+                "標準化する構成に平均と標準偏差が渡されていません。文書から求めて渡してください。"
+            )
+        narrowed = standardization.apply(narrowed)
     return build_search_vectors(
-        _narrow(states, plan),
+        narrowed,
         normalize_layers=plan.normalize_layers,
         normalize=plan.similarity == COSINE,
     )

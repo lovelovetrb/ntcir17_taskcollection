@@ -75,6 +75,19 @@ def test_the_two_layer_combination_experiments_differ_only_in_normalization() ->
     assert all(p.normalize_layers is True for p in normalized)
 
 
+def test_the_standardized_layer_sweep_differs_only_in_standardization() -> None:
+    """標準化は実験として分ける (ADR-0037)。"""
+    plain = build_plans("layer-sweep", LAYERS, DIMENSIONS)
+    standardized = build_plans("layer-sweep-standardized", LAYERS, DIMENSIONS)
+
+    assert [(p.layers, p.similarity) for p in plain] == [
+        (p.layers, p.similarity) for p in standardized
+    ]
+    assert all(p.normalize_layers is False for p in standardized)
+    assert all(p.standardize is False for p in plain)
+    assert all(p.standardize is True for p in standardized)
+
+
 def test_an_unknown_name_is_rejected() -> None:
     with pytest.raises(ValueError, match="absent"):
         build_plans("absent", LAYERS, DIMENSIONS)

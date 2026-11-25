@@ -18,15 +18,21 @@ PlanBuilder = Callable[[Sequence[int], Sequence[int]], list[ConfigurationPlan]]
 """利用できる層と次元の番号から、回す構成の一覧を作る。"""
 
 
-def layer_sweep(layers: Sequence[int], dimensions: Sequence[int]) -> list[ConfigurationPlan]:
-    """層を 1 つずつ使う (ADR-0006)。
+def layer_sweep(
+    layers: Sequence[int], dimensions: Sequence[int], *, standardize: bool = False
+) -> list[ConfigurationPlan]:
+    """層を 1 つずつ使う (ADR-0006)。標準化の有無は実験として分ける (ADR-0037)。
 
     層が 1 つのときは層ごとの正規化の有無で結果が変わらないため、片方だけ回す。
     """
     del dimensions
     return [
         ConfigurationPlan(
-            layers=(layer,), dimensions=SelectAll(), normalize_layers=False, similarity=similarity
+            layers=(layer,),
+            dimensions=SelectAll(),
+            normalize_layers=False,
+            similarity=similarity,
+            standardize=standardize,
         )
         for layer in layers
         for similarity in SIMILARITIES
@@ -57,6 +63,7 @@ def layer_combinations(
 
 _BUILDERS: dict[str, PlanBuilder] = {
     "layer-sweep": layer_sweep,
+    "layer-sweep-standardized": partial(layer_sweep, standardize=True),
     "layer-combinations": partial(layer_combinations, normalize_layers=False),
     "layer-combinations-normalized": partial(layer_combinations, normalize_layers=True),
 }

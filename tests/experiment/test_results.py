@@ -48,6 +48,7 @@ def test_a_configuration_result_is_self_contained() -> None:
         "dimensions": {"kind": "all"},
         "normalize_layers": True,
         "similarity": "cosine",
+        "standardize": False,
         "metrics": METRICS,
         "zero_norm": {"queries": 0, "documents": 2},
     }
@@ -143,6 +144,32 @@ def test_a_record_without_a_similarity_is_rejected() -> None:
 
     with pytest.raises(KeyError, match="similarity"):
         TopicResult.from_record(record)
+
+
+def test_a_configuration_records_whether_it_was_standardized() -> None:
+    configuration = Configuration(
+        model_id="cl-tohoku/bert-base-japanese-v3",
+        layers=(0,),
+        dimensions=DimensionChoice(kind="all"),
+        normalize_layers=False,
+        similarity="cosine",
+        standardize=True,
+    )
+
+    assert configuration.as_record()["standardize"] is True
+
+
+def test_a_record_without_standardize_is_read_as_not_standardized() -> None:
+    """標準化 (ADR-0037) より前の記録は、どれも標準化していない。"""
+    record = TopicResult(
+        experiment="layer-sweep",
+        configuration=configuration_of(DimensionChoice(kind="all")),
+        topic_id="0001",
+        metrics=METRICS,
+    ).as_record()
+    del record["standardize"]
+
+    assert TopicResult.from_record(record).configuration.standardize is False
 
 
 def test_a_run_evaluation_without_a_similarity_is_restored() -> None:

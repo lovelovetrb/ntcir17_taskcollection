@@ -50,6 +50,7 @@ class Configuration:
     dimensions: DimensionChoice
     normalize_layers: bool
     similarity: Similarity | None
+    standardize: bool = False
 
     def as_record(self) -> dict[str, Any]:
         return {
@@ -58,6 +59,7 @@ class Configuration:
             "dimensions": self.dimensions.as_record(),
             "normalize_layers": self.normalize_layers,
             "similarity": self.similarity,
+            "standardize": self.standardize,
         }
 
     @classmethod
@@ -65,6 +67,7 @@ class Configuration:
         """記録では list になっている層番号を tuple に戻す。
 
         類似度は ADR-0035 より前の記録にはない。どちらで検索したかを決めつけずに止める。
+        標準化は ADR-0037 より前の記録にはないが、それらはどれも標準化していない。
         """
         if "similarity" not in record:
             raise KeyError(
@@ -77,6 +80,7 @@ class Configuration:
             dimensions=DimensionChoice.from_record(record["dimensions"]),
             normalize_layers=record["normalize_layers"],
             similarity=record["similarity"],
+            standardize=record.get("standardize", False),
         )
 
 

@@ -207,3 +207,32 @@ def test_records_the_similarity(pieces: Pieces) -> None:
         "inner_product",
     ]
     assert {r.configuration.similarity for r in results.topics} == {"cosine", "inner_product"}
+
+
+def test_queries_are_standardized_with_the_document_mean_and_std() -> None:
+    """問いに文書の平均と同じ値を置くと、文書の平均と標準偏差で直したときだけ 0 になる。
+
+    問いの側で平均と標準偏差を求めると、問いの平均は [3.5, 10] でどちらの問いも 0 にならない。
+    """
+    documents = HiddenStates.of(torch.tensor([[[1.0, 10.0]], [[3.0, 30.0]]]), item_ids=("a", "b"))
+    queries = HiddenStates.of(torch.tensor([[[2.0, 20.0]], [[5.0, 0.0]]]), item_ids=TOPICS)
+    relevance = align_relevance({"0001": {"a": 1}, "0002": {"b": 1}}, TOPICS, ("a", "b"))
+    plan = ConfigurationPlan(
+        layers=(0,),
+        dimensions=SelectAll(),
+        normalize_layers=False,
+        similarity="inner_product",
+        standardize=True,
+    )
+
+    results = run_experiment(
+        experiment="layer-sweep-standardized",
+        model_id="m",
+        documents=documents,
+        queries=queries,
+        relevance=relevance,
+        plans=[plan],
+        ks=(1,),
+    )
+
+    assert results.configurations[0].zero_norm_queries == 1
